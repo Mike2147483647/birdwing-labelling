@@ -43,6 +43,8 @@ Lydia has applied DMD to the partially missing data. She visualized it with obse
 
 Pointed out by Ben, the missing parts can be long and thus there could be more than 1 mode in the missing parts. 
 
+> Note from Lydia: DMD creates a model of data which is messy, non-periodic, with missing sections. With the model you can forecast forwards to predict what will happen next, but also upsample. The model is comprised of modes each with a different spatiotemporal definition and associated frequency. This decomposition is interesting, but if we want a useful model of flapping we use all of the modes together. 
+
 
 ## First thoughts in 23/6/25 meeting
 
@@ -87,7 +89,7 @@ M^i(t) =
 \end{cases}
 $$
 
-To clarify, if we know $J(t)$, we know $M(t)$, since indices that are not $*$ in $J(t)$ must be $1$ in $M(t)$, and indices that are $*$ in $J(t)$ must be $0$ in $M(t)$. However, the reverse is not true, since having a $1$ in $M(t)$ does not tell anything about the type of marker in $J(t)$. We only know it is a valid marker. 
+To clarify, if we know $J(t)$, we know $M(t)$, since indices that are not $\*$ in $J(t)$ must be $1$ in $M(t)$, and indices that are $*$ in $J(t)$ must be $0$ in $M(t)$. However, the reverse is not true, since having a $1$ in $M(t)$ does not tell anything about the type of marker in $J(t)$. We only know it is a valid marker. 
 
 Now our parameter of interest becomes the joint $(J(t), M(t))$. The posterior is,
 
