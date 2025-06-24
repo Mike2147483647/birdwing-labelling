@@ -57,7 +57,9 @@ For the coordinates, let
 Since the DMD output is reasonably close to the real bird, we assume that the true underlying model is $Z(t)|Y(t)$, and $X(t)$ are the realisationis from $Z(t)$. We start modelling the likelihood naively and generalise it procedurally. 
 
 Firsly, we assume $k=8$ and model each marker independently,
+
 $$Z^i(t) \sim N(Y^i(t), \sigma), \text{ for } i = 1,...,8$$
+
 This is already a multivariate normal since we are using 3D coordinates. I assume the xyz coordinates are independent, since we cannot tell the coordinates of xy given z for example.
 
 However, it is apparent that the coordinates of different markers are correlated, e.g. if the left wing tip is high, the right wing tip is probably also high, like in a flapping action. So
