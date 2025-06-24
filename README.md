@@ -57,15 +57,15 @@ For the coordinates, let
 Since the DMD output is reasonably close to the real bird, we assume that the true underlying model is $Z(t)|Y(t)$, and $X(t)$ are the realisationis from $Z(t)$. We start modelling the likelihood naively and generalise it procedurally. 
 
 Firsly, we assume $k=8$ and model each marker independently,
-$$
+$$\begin{aligned}
 Z^i(t) \sim N(Y^i(t), \sigma), \text{ for } i = 1,...,8
-$$
+\end{aligned}$$
 This is already a multivariate normal since we are using 3D coordinates. I assume the xyz coordinates are independent, since we cannot tell the coordinates of xy given z for example.
 
 However, it is apparent that the coordinates of different markers are correlated, e.g. if the left wing tip is high, the right wing tip is probably also high, like in a flapping action. So
-$$
+$$\begin{aligned}
 Z(t) \sim N(Y(t), \Sigma)
-$$
+\end{aligned}$$
 
 Nevertheless, we are still assuming 
 1. length of $Z(t)$ is the same as $Y(t)$.
@@ -75,33 +75,33 @@ Taking this in account, let $k$ be the length of $Z(t)$, and $J(t)$ be the vecto
 
 Since our ultimate goal is to automate the labelling procedure, we are interested in $J(t)|X(t),Y(t)$. In English (for my sanity), we are interested in the labels given the observed coordinates and the DMD predictions at time $t$.
 The true posterior is
-$$
+$$\begin{aligned}
 P(J(t) | Z(t), Y(t)) \propto P(Z(t) | J(t), Y(t)) P(J(t))
-$$
+\end{aligned}$$
 
 We find difficulties in inferring $J(t)$ directly, so instead  Lydia suggested a two-step prediction. Ben followed up with introducing $M(t)$, a length $k$ vector of indicators,
-$$
+$$\begin{aligned}
 M^i(t) = 
 \begin{cases} 
 1 & \text{if entry i is a marker} \\
 0 & \text{otherwise}
 \end{cases}
-$$
+\end{aligned}$$
 To clarify, if we know $J(t)$, we know $M(t)$, since indices that are not $*$ in $J(t)$ must be $1$ in $M(t)$, and indices that are $*$ in $J(t)$ must be $0$ in $M(t)$. However, the reverse is not true, since having a $1$ in $M(t)$ does not tell anything about the type of marker in $J(t)$. We only know it is a valid marker. 
 
 Now our parameter of interest becomes the joint $(J(t), M(t))$. The posterior is,
-$$
+$$\begin{aligned}
 P(J(t), M(t) \mid Z(t), Y(t))
 = P(J(t) \mid M(t), Z(t), Y(t)) P(M(t) \mid Z(t), Y(t))
-$$
+\end{aligned}$$
 The term $P(J(t) \mid M(t), Z(t), Y(t))$ can be trained by using the Gold standard and $P(M(t) \mid Z(t), Y(t))$ can be trained by cross-referencing the Gold standard (clean) and the unlabelled data (messy). We also mentioned adding artificial noise can be helpful in training this quantity.
 
 I find this two step quantity rather weird, since if we are using a generative approach, we will have two distributions of $Z(t)$, namely $P(Z(t) \mid J(t), Y(t))$ and $P(Z(t) \mid M(t), Y(t))$. Some maths will give
 $$
-\begin{align}
+\begin{aligned}
 &\hspace{7mm} P(J(t), M(t) \mid Z(t), Y(t)) \\
 &= P(J(t) \mid M(t), Z(t), Y(t)) P(M(t) \mid Z(t), Y(t)) \\
 &= P(Z(t) \mid J(t), Y(t)) P(Z(t) \mid M(t), Y(t)) P(M(t)) P(J(t))
-\end{align}
+\end{aligned}
 $$
 Since $M(t)$ is given conditioned on $J(t)$, we will still obtain the problematic $P(Z(t)|J(t),Y(t))$. So in a generative approach, this two step progress is not very helpful?
