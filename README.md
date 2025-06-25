@@ -3,6 +3,9 @@ title: Project Description
 
 ---
 
+## How to use 
+
+There should be 4 files, 1 npy and 3 csv in `../src/birdwinglabel/data`, supplied by Lydia. Download the project here and in your project directory, run `pip install .` to install `birdwinglabel` as a package. Mainly, use `pip install -e .`  for editing.
 
 
 ## Project Description
