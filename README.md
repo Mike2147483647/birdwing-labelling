@@ -58,7 +58,7 @@ For the coordinates, let
 
 Since the DMD output is reasonably close to the real bird, we assume that the true underlying model is $Z(t)|Y(t)$, and $X(t)$ are the realisationis from $Z(t)$. We start modelling the likelihood naively and generalise it procedurally. 
 
-Firsly, we assume $k=8$ and model each marker independently,
+Firstly, we assume $k=8$ and model each marker independently,
 
 $$Z^i(t) \sim N(Y^i(t), \sigma), \text{ for } i = 1,...,8$$
 
@@ -72,7 +72,7 @@ Nevertheless, we are still assuming
 1. length of $Z(t)$ is the same as $Y(t)$.
 2. order of the entries in $Z(t)$ is the same as $Y(t)$.
 
-Taking this in account, let $k$ be the length of $Z(t)$, and $J(t)$ be the vector of markers of $Z(t)$, where entry $i = 1,...,k$ of $J(t)$, $J^i(t) \in \{ 1,2,...,8,*\}$, $*$ represents that the corresponding $Z^i(t)$ is invalid, since it could be a spurious marker or we did not observe all 8 markers.
+Taking this in account, let $k$ be the length of $Z(t)$, and $J(t)$ be the vector of markers of $Z(t)$, where entry $i = 1,...,k$ of $J(t)$, $J^i(t) \in \{ 1,2,...,8,* \}$, $*$ represents that the corresponding $Z^i(t)$ is invalid, since it could be a spurious marker or we did not observe all 8 markers.
 
 Since our ultimate goal is to automate the labelling procedure, we are interested in $J(t)|X(t),Y(t)$. In English (for my sanity), we are interested in the labels given the observed coordinates and the DMD predictions at time $t$.
 The true posterior is
