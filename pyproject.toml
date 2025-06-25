@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "birdwinglabel"
+version = "0.0.1"
+authors = [
+  { name="Mike Chan" },
+]
+description = "I am just lazy to direct paths everytime."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["numpy", "pandas"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/Mike2147483647/birdwing-labelling"
