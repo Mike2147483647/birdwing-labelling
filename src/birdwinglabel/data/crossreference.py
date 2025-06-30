@@ -15,6 +15,10 @@ labelled_npy = bilateral_markers
 # remove duplicate rows
 labelled_df = labelled_df.drop_duplicates()
 
+# check frameID unique
+print(f"no of unique frameIDs = {len(labelled_df['frameID'].unique())}")
+print(f"length of frameID = {len(labelled_df['frameID'])}")
+
 # filter into frame with only frameID, seqID and rot_xyz
 labelled_df = labelled_df.iloc[:,np.r_[0:2, 12:36]]
 
@@ -38,6 +42,7 @@ unlabelled_filtered_df = unlabelled_filtered_df.iloc[:,[0,1,7,8,9]]
 unlabelled_grouped_df = unlabelled_filtered_df.groupby(['frameID', 'seqID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
     lambda x: x.to_numpy()
 ).reset_index(name='rot_xyz')
+print(unlabelled_grouped_df.iloc[2,2])
 
 # sort unlabelled data to have same order as labelled in frameID column
 order_by_frameID = labelled_df['frameID']

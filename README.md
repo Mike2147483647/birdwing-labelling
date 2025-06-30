@@ -103,14 +103,9 @@ $$
 
 The term $P(J(t) \mid M(t), Z(t), Y(t))$ can be trained by using the Gold standard and $P(M(t) \mid Z(t), Y(t))$ can be trained by cross-referencing the Gold standard (clean) and the unlabelled data (messy). We also mentioned adding artificial noise can be helpful in training this quantity.
 
-I find this two step quantity rather weird, since if we are using a generative approach, we will have two distributions of $Z(t)$, namely $P(Z(t) \mid J(t), Y(t))$ and $P(Z(t) \mid M(t), Y(t))$. Some maths will give
 
-$$
-\begin{align}
-&\hspace{7mm} P(J(t), M(t) \mid Z(t), Y(t)) \\
-&= P(J(t) \mid M(t), Z(t), Y(t)) P(M(t) \mid Z(t), Y(t)) \\
-&= P(Z(t) \mid J(t), Y(t)) P(Z(t) \mid M(t), Y(t)) P(M(t)) P(J(t))
-\end{align}
-$$
+## Meeting on 30/6/25
 
-Since $M(t)$ is given conditioned on $J(t)$, we will still obtain the problematic $P(Z(t)|J(t),Y(t))$. So in a generative approach, this two step progress is not very helpful?
+One big conclusion we have today is that DMD needs the markers to work, but the data we get (training or the real data we want to label) do not have markers. So we can't use the DMD output in our model. Since the bird will fly many times in the same setting, Lydia suggest we can use the average position of the markers in time as an input of the model.
+
+
