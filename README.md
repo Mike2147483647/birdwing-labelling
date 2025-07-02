@@ -106,6 +106,16 @@ The term $P(J(t) \mid M(t), Z(t), Y(t))$ can be trained by using the Gold standa
 
 ## Meeting on 30/6/25
 
-One big conclusion we have today is that DMD needs the markers to work, but the data we get (training or the real data we want to label) do not have markers. So we can't use the DMD output in our model. Since the bird will fly many times in the same setting, Lydia suggest we can use the average position of the markers in time as an input of the model.
+One big conclusion we have today is that DMD needs the markers to work, but the data we get (training or the real data we want to label) do not have markers. So we can't use the DMD output in our model. Since the bird will fly many times in the same setting, Lydia suggested we can use the average position of the markers in time as a baseline for the input of the model.
+
+If the bird wing have missing position as in the training data, the model may fail. We have a new thought: we first get the trajectories of the markers and let the model to compare the input data to this trajectories.
+
+We partially scrapped that and we want to treat each frame independent. Lydia mentioned, instead of the individual points, we can model the edges and then obtain markers from the combinations of the edges.
+
+On to training, we want the machine to receive data (unknown order), guess an expected shape, and predict that the markers by comparing the expected shape to known shapes.
+
+Ben suggested we should start on building a machine that has inputs of $\mathbb{R}^{8 \times 3}$ matrix (coordinates of markers in each frame), and outputs a $8 \times 8$ matrix where each row represents the probability density of label of a marker. 
+
+Although this model may have difficulties with inputs with less or more than 8 rows, we decide to go on and see what works and doesn't for this week.
 
 
