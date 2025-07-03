@@ -25,11 +25,11 @@ full_bilateral_markers = full_bilateral_markers.drop_duplicates(subset='frameID'
 
 # get list of seqID names
 def get_list_of_seqID(bird_data):
-    return bird_data['seqID'].to_list()
+    return bird_data['seqID'].unique().tolist()
 
 # get list of frameID names
 def get_list_of_frameID(bird_data):
-    return bird_data['frameID'].to_list()
+    return bird_data['frameID'].unique().tolist()
 
 # subset data by seqID
 def subset_by_seqID(bird_data, seq_id_list):
@@ -37,7 +37,7 @@ def subset_by_seqID(bird_data, seq_id_list):
 
 # subset data by frameID
 def subset_by_frameID(bird_data, frame_id_list):
-    return bird_data[bird_data['seqID'].isin(frame_id_list)]
+    return bird_data[bird_data['frameID'].isin(frame_id_list)]
 
 
 # create training data
