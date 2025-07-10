@@ -1,0 +1,64 @@
+unlabelled_grouped_df.pkl
+
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 152878 entries, 0 to 152877
+Data columns (total 3 columns):
+ #   Column        Non-Null Count   Dtype
+---  ------        --------------   -----
+ 0   frameID       152878 non-null  category
+ 1   rot_xyz       152878 non-null  object
+ 2   rot_xyz_mask  152878 non-null  object
+dtypes: category(1), object(2)
+memory usage: 8.1+ MB
+
+
+gold_df.pkl
+
+<class 'pandas.core.frame.DataFrame'>
+Index: 152878 entries, 0 to 155865
+Data columns (total 27 columns):
+ #   Column                     Non-Null Count   Dtype
+---  ------                     --------------   -----
+ 0   frameID                    152878 non-null  object
+ 1   seqID                      152878 non-null  object
+ 2   left_wingtip_rot_xyz_1     152878 non-null  float64
+ 3   left_wingtip_rot_xyz_2     152878 non-null  float64
+ 4   left_wingtip_rot_xyz_3     152878 non-null  float64
+ 5   right_wingtip_rot_xyz_1    152878 non-null  float64
+ 6   right_wingtip_rot_xyz_2    152878 non-null  float64
+ 7   right_wingtip_rot_xyz_3    152878 non-null  float64
+ 8   left_primary_rot_xyz_1     152878 non-null  float64
+ 9   left_primary_rot_xyz_2     152878 non-null  float64
+ 10  left_primary_rot_xyz_3     152878 non-null  float64
+ 11  right_primary_rot_xyz_1    152878 non-null  float64
+ 12  right_primary_rot_xyz_2    152878 non-null  float64
+ 13  right_primary_rot_xyz_3    152878 non-null  float64
+ 14  left_secondary_rot_xyz_1   152878 non-null  float64
+ 15  left_secondary_rot_xyz_2   152878 non-null  float64
+ 16  left_secondary_rot_xyz_3   152878 non-null  float64
+ 17  right_secondary_rot_xyz_1  152878 non-null  float64
+ 18  right_secondary_rot_xyz_2  152878 non-null  float64
+ 19  right_secondary_rot_xyz_3  152878 non-null  float64
+ 20  left_tailtip_rot_xyz_1     152878 non-null  float64
+ 21  left_tailtip_rot_xyz_2     152878 non-null  float64
+ 22  left_tailtip_rot_xyz_3     152878 non-null  float64
+ 23  right_tailtip_rot_xyz_1    152878 non-null  float64
+ 24  right_tailtip_rot_xyz_2    152878 non-null  float64
+ 25  right_tailtip_rot_xyz_3    152878 non-null  float64
+ 26  rot_xyz_matrix             152878 non-null  object
+dtypes: float64(24), object(3)
+memory usage: 32.7+ MB
+
+
+labelled_df.pkl
+
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 152878 entries, 0 to 152877
+Data columns (total 3 columns):
+ #   Column   Non-Null Count   Dtype
+---  ------   --------------   -----
+ 0   frameID  152878 non-null  category
+ 1   rot_xyz  152878 non-null  object
+ 2   labels   152878 non-null  object
+dtypes: category(1), object(2)
+memory usage: 4.1+ MB

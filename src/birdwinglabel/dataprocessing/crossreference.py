@@ -33,7 +33,7 @@ labelled_df['rot_xyz_matrix'] = [
 # filter unlabelled to have frames only also exist in labelled
 shared_cols = ['frameID']
 unlabelled_filtered_df = unlabelled_df.merge(labelled_df[shared_cols], on = shared_cols, how='inner')
-print(unlabelled_filtered_df.info())
+print(f'unlabelled_filtered_df.info():\n{unlabelled_filtered_df.info()}')
 
 # continue filtering into a frame with only frameID, seqID and rot_xyz
 unlabelled_filtered_df = unlabelled_filtered_df.iloc[:,[0,1,7,8,9]]
@@ -42,7 +42,7 @@ unlabelled_filtered_df = unlabelled_filtered_df.iloc[:,[0,1,7,8,9]]
 unlabelled_grouped_df = unlabelled_filtered_df.groupby(['frameID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
     lambda x: x.to_numpy()
 ).reset_index(name='rot_xyz')
-print(unlabelled_grouped_df.info())
+print(f'unlabelled_grouped_df.info():\n{unlabelled_grouped_df.info()}')
 # print(unlabelled_grouped_df.iloc[2,1])
 
 # sort unlabelled data to have same order as labelled in frameID column
@@ -86,7 +86,24 @@ unlabelled_grouped_df['rot_xyz_mask'] = unlabelled_grouped_df.apply(
 # and sort row in each matrix in unlabelled according to matrix in labelled
 # and sort the 'rot_xyz_mask' accordingly
 
+def sort_unlabelled_matrix(row):
+    labelled_matrix = labelled_matrix_dict.get(row['frameID'])
+    unlabelled_matrix = row['rot_xyz']
+    mask = row['rot_xyz_mask']
+    matched_indices = []
+    unmatched_indices = list(range(unlabelled_matrix.shape[0]))
+    for labelled_row in labelled_matrix:
+        idx = np.where((unlabelled_matrix == labelled_row).all(axis=1))[0]
+        if len(idx) > 0:
+            matched_indices.append(idx[0])
+            unmatched_indices.remove(idx[0])
+    # Combine matched in order, then unmatched
+    final_order = matched_indices + unmatched_indices
+    sorted_matrix = unlabelled_matrix[final_order]
+    sorted_mask = mask[final_order]
+    return pd.Series({'rot_xyz': sorted_matrix, 'rot_xyz_mask': sorted_mask})
 
+unlabelled_grouped_df[['rot_xyz', 'rot_xyz_mask']] = unlabelled_grouped_df.apply(sort_unlabelled_matrix, axis=1)
 
 
 # checking the results
@@ -97,4 +114,5 @@ print(f'unlabelled_grouped_df.info():\n{unlabelled_grouped_df.info()}\n' +
       f'{unlabelled_grouped_df['rot_xyz_mask'][2]}')
 
 # save the produced dataset
-unlabelled_grouped_df.to_csv('cross-reference.csv', index=False)
+unlabelled_grouped_df.to_pickle('unlabelled_grouped_df.pkl')
+labelled_df.to_pickle('gold_df.pkl')
