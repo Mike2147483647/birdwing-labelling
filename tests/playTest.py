@@ -1,5 +1,4 @@
-from birdwinglabel.data.data import full_bilateral_markers, bilateral_markers, bilateral_frame, full_no_labels
-import pandas as pd
+from birdwinglabel.data import full_bilateral_markers
 
 # checking the head of the loaded dataframes and arrays
 print(full_bilateral_markers.info())

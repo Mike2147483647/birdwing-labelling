@@ -41,39 +41,50 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
 
 def test_loop(dataloader, model, loss_fn):
-    # Set the model to evaluation mode - important for batch normalization and dropout layers
     model.eval()
-
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
-    test_loss, correct = 0, 0
-    total_labels = 0
+    test_loss, correct, total_labels = 0, 0, 0
 
-    # Evaluating the model with torch.no_grad() ensures that no gradients are computed during test mode
-    # also serves to reduce unnecessary gradient computations and memory usage for tensors with requires_grad=True
     with torch.no_grad():
         for X, y in dataloader:
-            pred = model(X)     # pred: [batch, 8, 8], y: [batch, 8]
+            pred = model(X)
             test_loss += loss_fn(pred, y).item()
-            pred_labels = pred.argmax(-1)   # outputs the argmax of the innermost array of pred, dim: [batch, 8]
-            correct += (pred_labels == y).sum().item()
-            total_labels += y.numel()
+
+            if isinstance(loss_fn, torch.nn.CrossEntropyLoss):
+                # y: [batch, 8], pred: [batch, 8, 8]
+                pred_labels = pred.argmax(-1)
+                correct += (pred_labels == y).sum().item()
+                total_labels += y.numel()
+            elif isinstance(loss_fn, torch.nn.BCEWithLogitsLoss):
+                # y: [batch, 8, 8], pred: [batch, 8, 8]
+                pred_labels = (torch.sigmoid(pred) > 0.5).float()
+                correct += (pred_labels == y).sum().item()
+                total_labels += y.numel()
+            else:
+                raise NotImplementedError("Unsupported loss function for accuracy calculation.")
+
+    # print(f"pred shape: {pred.shape}, pred dtype: {pred.dtype}, pred sample: {pred[:5]}")
+    # print(f"y shape: {y.shape}, y dtype: {y.dtype}, y sample: {y[:5]}")
 
     test_loss /= num_batches
     accuracy = 100 * correct / total_labels
     print(f"Test Error: \n Accuracy: {accuracy:>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
-def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10):
+def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file='train_log.txt'):
 
     # train and test dataloader are instance of DataLoader using train and test data
 
-    for t in range(epochs):
-        print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_dataloader, model, loss_fn, optimizer)
-        test_loop(test_dataloader, model, loss_fn)
-    print("Done!")
+    import contextlib
 
-    # save the trained parameters
-    torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
+    with open(log_file, 'w') as f, contextlib.redirect_stdout(f):
+        for t in range(epochs):
+            print(f"Epoch {t + 1}\n-------------------------------")
+            train_loop(train_dataloader, model, loss_fn, optimizer)
+            test_loop(test_dataloader, model, loss_fn)
+        print("Done!")
+
+        # save the trained parameters
+        torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
 

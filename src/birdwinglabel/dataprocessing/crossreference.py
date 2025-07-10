@@ -31,18 +31,19 @@ labelled_df['rot_xyz_matrix'] = [
 
 # for unlabelled data
 # filter unlabelled to have frames only also exist in labelled
-shared_cols = ['frameID', 'seqID']
+shared_cols = ['frameID']
 unlabelled_filtered_df = unlabelled_df.merge(labelled_df[shared_cols], on = shared_cols, how='inner')
-# print(unlabelled_filtered_df.info())
+print(unlabelled_filtered_df.info())
 
 # continue filtering into a frame with only frameID, seqID and rot_xyz
 unlabelled_filtered_df = unlabelled_filtered_df.iloc[:,[0,1,7,8,9]]
 
 # reshape into matrices of k rows x 3 columns for each frame
-unlabelled_grouped_df = unlabelled_filtered_df.groupby(['frameID', 'seqID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
+unlabelled_grouped_df = unlabelled_filtered_df.groupby(['frameID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
     lambda x: x.to_numpy()
 ).reset_index(name='rot_xyz')
-print(unlabelled_grouped_df.iloc[2,2])
+print(unlabelled_grouped_df.info())
+# print(unlabelled_grouped_df.iloc[2,1])
 
 # sort unlabelled data to have same order as labelled in frameID column
 order_by_frameID = labelled_df['frameID']
@@ -57,6 +58,8 @@ unlabelled_grouped_df['frameID'] = pd.Categorical(
 unlabelled_grouped_df = unlabelled_grouped_df.sort_values('frameID').reset_index(drop=True)
 
 
+# compare each row of unlabelled to labelled and set 1 if we can find this row
+# in labelled, 0 otherwise
 
 # create mapping from frameID to labelled matrix
 labelled_matrix_dict = dict(
@@ -77,6 +80,21 @@ unlabelled_grouped_df['rot_xyz_mask'] = unlabelled_grouped_df.apply(
     lambda row: match_rows_to_labelled(row['rot_xyz'], row['frameID']),
     axis=1
 )
+
+
+# compare unlabelled_grouped_df['rot_xyz'] to labelled_df['rot_xyz_matrix']
+# and sort row in each matrix in unlabelled according to matrix in labelled
+# and sort the 'rot_xyz_mask' accordingly
+
+
+
+
+# checking the results
+print(f'unlabelled_grouped_df.info():\n{unlabelled_grouped_df.info()}\n' +
+      f'labelled_df.info()\n{labelled_df.info()}\n' +
+      f'sample 3rd row: \nlabelled_df: \n{labelled_df['rot_xyz_matrix'][2]}\n' +
+      f'unlabelled_grouped_df: \n{unlabelled_grouped_df['rot_xyz'][2]}\n' +
+      f'{unlabelled_grouped_df['rot_xyz_mask'][2]}')
 
 # save the produced dataset
 unlabelled_grouped_df.to_csv('cross-reference.csv', index=False)
