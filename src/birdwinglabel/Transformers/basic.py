@@ -1,11 +1,10 @@
 import pandas as pd
-import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from torch import nn
 
-from birdwinglabel.data import data, createtorchdataset
-from birdwinglabel.data.data import full_bilateral_markers
+from birdwinglabel.dataprocessing import createtorchdataset, data
+from birdwinglabel.dataprocessing.data import full_bilateral_markers
 
 from birdwinglabel.common import trainandtest
 
@@ -23,14 +22,14 @@ train_pd_dataframe = (
 )
 test_pd_dataframe = (
     pd.DataFrame(full_bilateral_markers)
-    .pipe(data.subset_by_seqID, seqID_list[200:210])
+    .pipe(data.subset_by_seqID, seqID_list[200:300])
     .pipe(data.create_training)
 )
 print(f'{train_pd_dataframe.info()}')
 
 # prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.MarkerDataset(train_pd_dataframe)
-test_Dataset = createtorchdataset.MarkerDataset(test_pd_dataframe)
+train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe)
+test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe)
 
 # put Datasets into DataLoader objects
 batch_size = 50
@@ -115,8 +114,8 @@ class DecoderOnlyTransformer(nn.Module):
         return logits
 
 
-model = DecoderOnlyTransformer(embed_dim=128, num_heads=8, mlp_dim=512, num_layers=6)
+model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
 
-loss = nn.CrossEntropyLoss()
+loss = nn.BCEWithLogitsLoss()
 optim = torch.optim.Adam(model.parameters())
-trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=20)
+trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=8)
