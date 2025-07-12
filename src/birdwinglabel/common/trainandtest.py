@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch import nn
 
 
+
 # code adapted from https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html 20250703_1555
 
 # loss_fn from nn and optimizer from torch.optim.SGD() eg
@@ -72,19 +73,33 @@ def test_loop(dataloader, model, loss_fn):
     print(f"Test Error: \n Accuracy: {accuracy:>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
+
 def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file='train_log.txt'):
 
     # train and test dataloader are instance of DataLoader using train and test data
-
+    # prepare class to output console ouput in txt while keeping the usual console output
+    import sys
     import contextlib
 
-    with open(log_file, 'w') as f, contextlib.redirect_stdout(f):
+    class Tee:
+        def __init__(self, file):
+            self.file = file
+            self.stdout = sys.stdout
+
+        def write(self, data):
+            self.file.write(data)
+            self.stdout.write(data)
+
+        def flush(self):
+            self.file.flush()
+            self.stdout.flush()
+
+    with open(log_file, 'w') as f, contextlib.redirect_stdout(Tee(f)):
+        print("Model architecture:\n", model)
         for t in range(epochs):
             print(f"Epoch {t + 1}\n-------------------------------")
             train_loop(train_dataloader, model, loss_fn, optimizer)
             test_loop(test_dataloader, model, loss_fn)
         print("Done!")
-
-        # save the trained parameters
         torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
 

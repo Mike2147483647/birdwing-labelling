@@ -12,30 +12,30 @@ from birdwinglabel.common import trainandtest
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
 
-# create training and test datasets
-seqID_list = data.get_list_of_seqID(full_bilateral_markers)
-print(seqID_list[0:50])
-train_pd_dataframe = (
-    pd.DataFrame(full_bilateral_markers)
-    .pipe(data.subset_by_seqID, seqID_list[0:200])
-    .pipe(data.create_training)
-)
-test_pd_dataframe = (
-    pd.DataFrame(full_bilateral_markers)
-    .pipe(data.subset_by_seqID, seqID_list[200:300])
-    .pipe(data.create_training)
-)
-print(f'{train_pd_dataframe.info()}')
-
-# prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe)
-test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe)
-
-# put Datasets into DataLoader objects
-batch_size = 50
-train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
-test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
-
+# # create training and test datasets
+# seqID_list = data.get_list_of_seqID(full_bilateral_markers)
+# print(seqID_list[0:50])
+# train_pd_dataframe = (
+#     pd.DataFrame(full_bilateral_markers)
+#     .pipe(data.subset_by_seqID, seqID_list[0:200])
+#     .pipe(data.create_training)
+# )
+# test_pd_dataframe = (
+#     pd.DataFrame(full_bilateral_markers)
+#     .pipe(data.subset_by_seqID, seqID_list[200:300])
+#     .pipe(data.create_training)
+# )
+# print(f'{train_pd_dataframe.info()}')
+#
+# # prepare the torch Datasets from pd dataframes
+# train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe,8)
+# test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe,8)
+#
+# # put Datasets into DataLoader objects
+# batch_size = 50
+# train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
+# test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
+#
 
 # adapted from course notes example
 class TransformerBlock(nn.Module):
@@ -79,9 +79,11 @@ class BirdEmbedding(nn.Module):
 
 # adapted from course notes example
 class DecoderOnlyTransformer(nn.Module):
-    def __init__(self, embed_dim: int, num_heads: int, mlp_dim: int, num_layers: int, seq_len: int = 8, dropout: float=0.1):
+    def __init__(self, embed_dim: int, num_heads: int, mlp_dim: int, num_layers: int, seq_len: int = 8, dropout: float=0.1, num_class:int = 8):
         super().__init__()
 
+        self.num_class = num_class
+        self.seq_len = seq_len
         self.embed = BirdEmbedding(3, embed_dim=embed_dim)
         self.layers = nn.ModuleList([
             TransformerBlock(embed_dim, num_heads, mlp_dim, dropout)
@@ -89,7 +91,7 @@ class DecoderOnlyTransformer(nn.Module):
         ])
         self.ln = nn.LayerNorm(embed_dim)
         self.flatten = nn.Flatten(start_dim=1)  # flatten on 2nd,3rd dim
-        self.out = nn.Linear(seq_len * embed_dim, 8 * 8)
+        self.out = nn.Linear(seq_len * embed_dim, seq_len * num_class)
 
 
 
@@ -110,12 +112,12 @@ class DecoderOnlyTransformer(nn.Module):
         x = x.transpose(0, 1)  # embedding transpose to [batch_size, seq_len, embed_dim]
         x = self.flatten(x)
         logits = self.out(x)    # mapped into 8 class prob x 8 markers, flattened
-        logits = logits.view(inputs.size(0), 8, 8)  # unflatten
+        logits = logits.view(inputs.size(0), self.seq_len, self.num_class)  # unflatten
         return logits
 
 
-model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
-
-loss = nn.BCEWithLogitsLoss()
-optim = torch.optim.Adam(model.parameters())
-trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=8)
+# model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
+#
+# loss = nn.BCEWithLogitsLoss()
+# optim = torch.optim.Adam(model.parameters())
+# trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=8)

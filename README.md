@@ -7,10 +7,11 @@ title: Project Description
 
 There should be 4 files, 1 npy and 3 csv in `../src/birdwinglabel/data`, supplied by Lydia. Download the project here and in your project directory, run `pip install .` to install `birdwinglabel` as a package. Mainly, use `pip install -e .`  for editing.
 
+Be sure to run `crossreference.py` and `labellingcrossrefdata.py` in `../src/birdwinglabel/dataprocessing`. They produce datasets in `.pkl` format for training in `../src/birdwinglabel/MLP` and `../src/birdwinglabel/Transformers`
 
 ## Project Description
 
-We want to learn the geometry of morphing bird wings. However, due to limited resources, semi-automatic methods are used to label the raw data. To reduce the amount of labour involved, we wish to model the labels probailistically and bring the labelling process to be fully automated.
+We want to learn the geometry of morphing bird wings. However, due to limited resources, semi-automatic methods are used to label the raw data. To reduce the amount of labour involved, we wish to model the labels probabilistically and bring the labelling process to be fully automated.
 
 
 ## Data Description

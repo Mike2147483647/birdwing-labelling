@@ -23,8 +23,9 @@ class MarkerDataset(Dataset):
 
 # use this with BCElogitsloss
 class HotMarkerDataset(Dataset):
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, num_class):
         self.data = dataframe
+        self.num_class = num_class
 
     def __len__(self):
         return len(self.data)
@@ -34,5 +35,5 @@ class HotMarkerDataset(Dataset):
         label = self.data.iloc[idx]['label']
         label = torch.tensor(label, dtype=torch.long).squeeze()
         # One-hot encode: shape [8, 8]
-        label = F.one_hot(label, num_classes=8).float()
+        label = F.one_hot(label, num_classes=self.num_class).float()
         return markers, label
