@@ -28,8 +28,8 @@ test_pd_dataframe = (
 print(f'{train_pd_dataframe.info()}')
 
 # prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe)
-test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe)
+train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe,8)
+test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe,8)
 
 # put Datasets into DataLoader objects
 batch_size = 50

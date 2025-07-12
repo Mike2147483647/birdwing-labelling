@@ -22,17 +22,18 @@ labelled_df = pd.DataFrame({
     'labels': unlabelled_df['rot_xyz_mask'].apply(create_labels)
 })
 
-# sanity check
-print(f'labelled_df info:')
-print(f'{labelled_df.info()}')
-print(f'sample: \nframeID: {labelled_df['frameID'][2]} \nmatrix: {labelled_df['rot_xyz'][2]} \nlabels: {labelled_df['labels'][2]}')
-
-labelled_df.to_pickle('labelled_df.pkl')
-
-
 
 
 if __name__ == "__main__":
+
+    # sanity check
+    print(f'labelled_df info:')
+    print(f'{labelled_df.info()}')
+    print(
+        f'sample: \nframeID: {labelled_df['frameID'][2]} \nmatrix: {labelled_df['rot_xyz'][2]} \nlabels: {labelled_df['labels'][2]}')
+
+    labelled_df.to_pickle('labelled_df.pkl')
+
     gold_df = pd.read_pickle('gold_df.pkl')
 
     def check_all_matched():
