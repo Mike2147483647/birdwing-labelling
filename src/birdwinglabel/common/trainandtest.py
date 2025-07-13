@@ -45,7 +45,7 @@ def test_loop(dataloader, model, loss_fn):
     model.eval()
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
-    test_loss, correct, total_labels = 0, 0, 0
+    test_loss, correct, total_labels, true_positive, actual_positive = 0, 0, 0, 0, 0
 
     with torch.no_grad():
         for X, y in dataloader:
@@ -62,15 +62,19 @@ def test_loop(dataloader, model, loss_fn):
                 pred_labels = (torch.sigmoid(pred) > 0.5).float()
                 correct += (pred_labels == y).sum().item()
                 total_labels += y.numel()
+                true_positive += ((pred_labels == 1) & (y == 1)).sum().item()
+                actual_positive += (y == 1).sum().item()
             else:
-                raise NotImplementedError("Unsupported loss function for accuracy calculation.")
+                raise NotImplementedError("Unsupported loss function for performance calculation.")
 
     # print(f"pred shape: {pred.shape}, pred dtype: {pred.dtype}, pred sample: {pred[:5]}")
     # print(f"y shape: {y.shape}, y dtype: {y.dtype}, y sample: {y[:5]}")
 
     test_loss /= num_batches
     accuracy = 100 * correct / total_labels
+    true_positive_rate = 100 * true_positive / actual_positive if actual_positive > 0 else 0
     print(f"Test Error: \n Accuracy: {accuracy:>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(f"True Positives: {true_positive} ({true_positive_rate:>0.1f}%)")
 
 
 

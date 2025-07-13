@@ -1,4 +1,4 @@
-import birdwinglabel.data.data as birdData
+import birdwinglabel.dataprocessing.data as birdData
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
