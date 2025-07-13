@@ -42,6 +42,24 @@ def subset_by_seqID(bird_data, seq_id_list):
 def subset_by_frameID(bird_data, frame_id_list):
     return bird_data[bird_data['frameID'].isin(frame_id_list)]
 
+# get list of seqID of unlabelled data
+def unlabelled_seqID():
+    labelled_seqID = get_list_of_seqID(full_bilateral_markers)
+    all_seqID = get_list_of_seqID(full_no_labels)
+    unlabelled_seqID = np.setdiff1d(all_seqID, labelled_seqID)
+    return unlabelled_seqID
+
+# for unlabelled dataset (full_no_label), filter and stack rot_xyz into n (no of markers) x 3 matrix
+def stack_matrix(unlabelled_df):
+
+    # unlabelled_df must have columns frameID, rot_xyz_1, rot_xyz_2, rot_xyz_3
+    unlabelled_grouped_df = unlabelled_df.groupby(['frameID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
+        lambda x: x.to_numpy()
+    ).reset_index(name='rot_xyz')
+
+    # output df has col1 frameID, col2 rot_xyz
+    return unlabelled_grouped_df
+
 
 # create training data
 def create_training(labelled_data, seed = 1):
@@ -90,13 +108,22 @@ def create_training(labelled_data, seed = 1):
 
 if __name__ == "__main__":
 
+    print(full_no_labels.info())
+    sample_seq = unlabelled_seqID()[0]
+    sample_df = subset_by_seqID(full_no_labels, [sample_seq])
+    sample_df = stack_matrix(sample_df)
+    print(f'{sample_df.info()}')
+    print(f'{sample_df.iloc[1,1]}')
+
     # get list of unique seqID of full_bilateral_markers
-    full_bilateral_seqID = get_list_of_seqID(full_bilateral_markers)
+    # full_bilateral_seqID = get_list_of_seqID(full_bilateral_markers)
     # print(full_bilateral_seqID)    # has length 1635
 
     # find subset of 04_09_038_1
-    sample_seqn = subset_by_seqID(full_bilateral_markers, ['04_09_038_1'])
+    # sample_seqn = subset_by_seqID(full_bilateral_markers, ['04_09_038_1'])
 
 
     # create training data from 04_09_038_1
-    train_set = create_training(sample_seqn)
+    # train_set = create_training(sample_seqn)
+
+    # print(f'unlabelled_seqID: {unlabelled_seqID()}')

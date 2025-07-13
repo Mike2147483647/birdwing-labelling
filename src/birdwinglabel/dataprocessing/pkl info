@@ -11,6 +11,8 @@ Data columns (total 3 columns):
 dtypes: category(1), object(2)
 memory usage: 8.1+ MB
 
+rot_xyz is matrix of n x 3, rot_xyz_mask is whether that row of coordinates exists in labelled_df
+
 
 gold_df.pkl
 
@@ -62,3 +64,14 @@ Data columns (total 3 columns):
  2   labels   152878 non-null  object
 dtypes: category(1), object(2)
 memory usage: 4.1+ MB
+
+rot_xyz is matrix of n x 3, labels is int from 0-8
+0 not a marker
+1 left_wingtip
+2 right_wingtip
+3 left_primary
+4 right_primary
+5 left_secondary
+6 right_secondary
+7 left_tailtip
+8 right_tailtip

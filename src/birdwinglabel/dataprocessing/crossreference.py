@@ -1,4 +1,5 @@
 from data import full_no_labels, full_bilateral_markers, bilateral_markers
+import data
 import numpy as np
 import pandas as pd
 
@@ -39,10 +40,8 @@ print(f'unlabelled_filtered_df.info():\n{unlabelled_filtered_df.info()}')
 unlabelled_filtered_df = unlabelled_filtered_df.iloc[:,[0,1,7,8,9]]
 
 # reshape into matrices of k rows x 3 columns for each frame
-unlabelled_grouped_df = unlabelled_filtered_df.groupby(['frameID'])[['rot_xyz_1', 'rot_xyz_2', 'rot_xyz_3']].apply(
-    lambda x: x.to_numpy()
-).reset_index(name='rot_xyz')
-print(f'unlabelled_grouped_df.info():\n{unlabelled_grouped_df.info()}')
+unlabelled_grouped_df = data.stack_matrix(unlabelled_filtered_df)
+print(f'abaca unlabelled_grouped_df.info():\n{unlabelled_grouped_df.info()}')
 # print(unlabelled_grouped_df.iloc[2,1])
 
 # sort unlabelled data to have same order as labelled in frameID column

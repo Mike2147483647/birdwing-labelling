@@ -8,7 +8,7 @@ from pathlib import Path
 from birdwinglabel.dataprocessing import createtorchdataset, data
 from birdwinglabel.dataprocessing.data import full_bilateral_markers
 
-from birdwinglabel.common import trainandtest
+from birdwinglabel.common import trainandtest, prepforML
 
 from birdwinglabel.Transformers.basic import DecoderOnlyTransformer
 
@@ -81,21 +81,22 @@ test_set = test_set.apply(permute, axis = 1)
 # print(f'train set sample: \n{train_set.iloc[2,1]} \n{train_set.iloc[2,2]}')
 
 # pad the matrices to have 32 rows
-def padding(x, final_length = 32):
-    if x.ndim == 1:
-        # Pad 1D vector
-        pad_width = (0, final_length - len(x))
-        return np.pad(x, pad_width, mode='constant')
-    elif x.ndim == 2:
-        # Pad 2D matrix (pad rows)
-        pad_width = ((0, final_length - x.shape[0]), (0, 0))
-        return np.pad(x, pad_width, mode='constant')
-    else:
-        return x  # unchanged if not 1D or 2D
+# def padding(x, final_length = 32):
+#     if x.ndim == 1:
+#         # Pad 1D vector
+#         pad_width = (0, final_length - len(x))
+#         return np.pad(x, pad_width, mode='constant')
+#     elif x.ndim == 2:
+#         # Pad 2D matrix (pad rows)
+#         pad_width = ((0, final_length - x.shape[0]), (0, 0))
+#         return np.pad(x, pad_width, mode='constant')
+#     else:
+#         return x  # unchanged if not 1D or 2D
+# moved to common
 
 for i in range(1,3):
-    train_set.iloc[:,i] = train_set.iloc[:,i].apply(padding)
-    test_set.iloc[:, i] = test_set.iloc[:, i].apply(padding)
+    train_set.iloc[:,i] = train_set.iloc[:,i].apply(prepforML.padding)
+    test_set.iloc[:, i] = test_set.iloc[:, i].apply(prepforML.padding)
 
 # print(f'train set sample: \n{train_set.iloc[2,1]} \n{train_set.iloc[2,2]}')
 
@@ -126,7 +127,7 @@ train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
 test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
 
 # traning the model
-model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=1, seq_len=32, num_class=9)
+model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
 
 loss = nn.BCEWithLogitsLoss()
 optim = torch.optim.Adam(model.parameters())

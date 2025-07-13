@@ -1,0 +1,58 @@
+load data separately
+create dataset for training
+create functions for extracting seqID and its corr subset easier
+
+notes:
+
+use cross entropy rather than just softmax since softmax gradients are flatter for larger values
+bcewithlogitloss is treating each entry of y (hot encoded) as a binary (0-1) classification, and uses crossentropy for each binclass
+for a datapoint, hot encoded y is 32 (padded) x 9 (num_class) where each row is 01s,
+    with 1 at idx indicating this coord has class idx
+because of how we trained and test the model (see trainandtest.test_loop), output with model trained with BCEwithLogitLoss
+    its entries is 1 if its >0.5 after sigmoid
+
+use 'here', pathlib for navigating the data files across subdirectories
+try branching if want to use sus actions from AIs
+poetry for python env, uv for cool people
+__init__ for package management, wont need to load anything in those packages
+
+try not to have py in data
+data process, training,
+
+look in data leaking. very sus about high acc
+randomize frames and
+filter by bird
+
+vertical to the floor
+horizontal neg to the perch
+ref frame at the of the flight
+
+8 markers cleared, sus, check data leakage and units of the tensor outputs
+    method of calculating accuracy may not be reliable
+    currently we count the number of correctly matching 01 in each entry of y and pred
+    thats 81 for every data, likely to be correct
+    things may change if counting each frame
+subsetting and make the problem harder for the machines
+checking what is hard the machine eg perchDist, type of flight
+then missing markers and extra markers
+missing:
+    remove some markers
+extra: add some noise markers
+can also visualize the data markers
+
+
+11/8 around 3w in us
+
+
+first randomize the order then pad to 32 rows for each matrix (data point)
+if want to train for missing labels (# markers <8), randomly set row and resp label to 0,
+move to bottom and then usual training set creation procedure
+
+must rename to 'markers_matrix' for data matrices
+'label' for labels
+maybe move createtraining to the actual training files, not under data
+
+
+possibly useful resources:
+Geometry-Guided Diffusion Model with Masked Transformer for Robust Multi-View 3D Human Pose Estimation
+https://dl.acm.org/doi/abs/10.1145/3664647.3681265

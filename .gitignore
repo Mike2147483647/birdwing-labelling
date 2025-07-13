@@ -4,6 +4,9 @@ src/birdwinglabel/data/*.csv
 src/birdwinglabel/data/*.npy
 **/*.zip
 
+# processed datasets or parameters
+**/*.pkl
+
 # personal environment
 .idea
 
