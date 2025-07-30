@@ -13,8 +13,9 @@ from birdwinglabel.Transformers.basic import DecoderOnlyTransformer
 
 
 # subset and prepare the unlabelled dataset for transformer
-unlabelled_seqID = data.unlabelled_seqID()
-unlabelled_df = data.subset_by_seqID(full_no_labels, [unlabelled_seqID[2]])     # choose the seq you want to label
+# unlabelled_seqID = data.unlabelled_seqID()
+unlabelled_seqID = data.get_list_of_seqID(data.full_bilateral_markers)      # gold data seqID
+unlabelled_df = data.subset_by_seqID(full_no_labels, [unlabelled_seqID[300]])     # choose the seq you want to label
 unlabelled_df = data.stack_matrix(unlabelled_df)
 unlabelled_df.iloc[:,1] = unlabelled_df.iloc[:,1].apply(prepforML.padding)
 print(f'unlabelled_df.info() \n{unlabelled_df.info()}')

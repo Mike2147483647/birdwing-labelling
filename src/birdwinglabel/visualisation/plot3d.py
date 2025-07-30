@@ -39,6 +39,9 @@ def plot_sequence(labelled_df):
     # Add scatter for markers 1-8
     marker_scatter = ax.scatter([], [], [], color='blue', s=30, label='Markers 1-8')
 
+    # Add scatter for non markers
+    zero_scatter = ax.scatter([], [], [], color='green', s=30, label='Label 0')
+
     def init():
         for line in lines:
             line.set_data([], [])
@@ -61,24 +64,33 @@ def plot_sequence(labelled_df):
             else:
                 lines[i].set_data([], [])
                 lines[i].set_3d_properties([])
-        # Now this code is reachable
-        mask = np.isin(labels, np.arange(1, 9))
-        marker_coords = coords[mask]
-        if marker_coords.shape[0] > 0:
-            marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
-        else:
-            marker_scatter._offsets3d = ([], [], [])
-        return lines + [marker_scatter]
+            # Markers 1-8 (blue)
+            mask = np.isin(labels, np.arange(1, 9))
+            marker_coords = coords[mask]
+            if marker_coords.shape[0] > 0:
+                marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
+            else:
+                marker_scatter._offsets3d = ([], [], [])
+            # Markers labeled 0 (green)
+            zero_mask = labels == 0
+            zero_coords = coords[zero_mask]
+            if zero_coords.shape[0] > 0:
+                zero_scatter._offsets3d = (zero_coords[:, 0], zero_coords[:, 1], zero_coords[:, 2])
+            else:
+                zero_scatter._offsets3d = ([], [], [])
+            return lines + [marker_scatter, zero_scatter]
 
     ani = FuncAnimation(fig, update, frames=len(labelled_df), init_func=init,
-                        blit=False, interval=50)
+                        blit=False, interval=100)
     plt.show()
 
 
+data_dir =  Path(__file__).parent.parent / 'Transformers' / 'Transformer_labelled_df.pkl'
+transformer_labelled_df = pd.read_pickle(data_dir)
+
 if __name__ == '__main__':
     # load dataset
-    data_dir =  Path(__file__).parent.parent / 'Transformers' / 'Transformer_labelled_df.pkl'
-    transformer_labelled_df = pd.read_pickle(data_dir)
+
 
     plot_sequence(transformer_labelled_df)
 

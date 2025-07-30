@@ -5,10 +5,10 @@ from torch.utils.data import DataLoader
 from torch import nn
 from pathlib import Path
 
-from birdwinglabel.dataprocessing import createtorchdataset, data
+from birdwinglabel.dataprocessing import data
 from birdwinglabel.dataprocessing.data import full_bilateral_markers
 
-from birdwinglabel.common import trainandtest, prepforML
+from birdwinglabel.common import trainandtest, prepforML, createtorchdataset
 
 from birdwinglabel.Transformers.basic import DecoderOnlyTransformer
 
@@ -26,20 +26,28 @@ labelled_df.rename(columns={labelled_df.columns[1]: 'markers_matrix', labelled_d
 
 
 # set rng for simulating zeros, subsetting data, etc
-RNG = np.random.default_rng(seed=1)
+
 
 # set some of the coords matrices, some of their first 8 rows to 0 to simulate missing markers
-def simmissing(data_point):
-    num_of_rows = data_point['markers_matrix'].shape[0]
-    marker_to_zero = RNG.integers(0,num_of_rows,size=1)
-    data_point['markers_matrix'][marker_to_zero] = np.zeros_like(data_point['markers_matrix'][marker_to_zero])
-    data_point['label'][marker_to_zero] = 0
-    return data_point
+# def simmissing_row(data_point, seed = 1):
+#     RNG = np.random.default_rng(seed=seed)
+#     num_of_rows = data_point['markers_matrix'].shape[0]
+#     marker_to_zero = RNG.integers(0,num_of_rows,size=1)
+#     data_point['markers_matrix'][marker_to_zero] = np.zeros_like(data_point['markers_matrix'][marker_to_zero])
+#     data_point['label'][marker_to_zero] = 0
+#     return data_point
+#
+# def simulate_missing(df, portion: float= 0.1, seed = 1):
+#     RNG = np.random.default_rng(seed=seed)
+#     num_of_data = len(df)
+#     rows_to_set_zero = RNG.choice(range(0, num_of_data), size=int(np.floor(num_of_data * portion)),
+#                                   replace=False)
+#     df.loc[rows_to_set_zero] = df.loc[rows_to_set_zero].apply(simmissing_row, axis=1)
+#     return df
+# moved to common/prepforML.py
 
-num_of_data = len(labelled_df)
-portion_to_set_zero = 0.1   # between 0 and 1
-rows_to_set_zero = RNG.choice(range(0,num_of_data), size = int(np.floor(num_of_data * portion_to_set_zero)), replace=False)
-labelled_df.loc[rows_to_set_zero] = labelled_df.loc[rows_to_set_zero].apply(simmissing, axis = 1)
+labelled_df = prepforML.simulate_missing(labelled_df, 0.1, 1)
+
 # print(f'labelled_df.iloc[1,1]: \n{labelled_df.iloc[1,1]} \n{type(labelled_df.iloc[1,1])} \n{labelled_df.iloc[1,2]}')
 # print(f'2 Nones in df: {labelled_df.isnull().sum().sum()}')
 
@@ -59,6 +67,7 @@ def get_frameID(idx):
     frameIDs = data.get_list_of_frameID(subset_markers)
     return frameIDs
 
+# choose sets by index in seqID
 train_idx = range(0,200)
 test_idx = range(200,250)
 train_set = data.subset_by_frameID(labelled_df, get_frameID(train_idx))
@@ -68,15 +77,21 @@ test_set = data.subset_by_frameID(labelled_df, get_frameID(test_idx))
 #       f' \n type: \n{type(train_set.iloc[2,1])}')
 # print(f'Nones in df: {labelled_df.isnull().sum().sum()}')
 # randomize the rows of coords matrix and labels of each data point
-def permute(data_point):
-    num_of_rows = data_point.iloc[1].shape[0]
-    perm = RNG.permutation(num_of_rows)
-    data_point.iloc[1] = data_point.iloc[1][perm]
-    data_point.iloc[2] = data_point.iloc[2][perm]
-    return data_point
+# def permute(data_point, seed = 1):
+#     RNG = np.random.default_rng(seed=seed)
+#     num_of_rows = data_point.iloc[1].shape[0]
+#     perm = RNG.permutation(num_of_rows)
+#     data_point.iloc[1] = data_point.iloc[1][perm]
+#     data_point.iloc[2] = data_point.iloc[2][perm]
+#     return data_point
+#
+# def permute_df(df, seed = 1):
+#     df = df.apply(permute, axis = 1)
+#     return df
+# moved to common/prepforML.py
 
-train_set = train_set.apply(permute, axis = 1)
-test_set = test_set.apply(permute, axis = 1)
+train_set = prepforML.permute_df(train_set)
+test_set = prepforML.permute_df(test_set)
 
 # print(f'train set sample: \n{train_set.iloc[2,1]} \n{train_set.iloc[2,2]}')
 
@@ -118,8 +133,8 @@ for i in range(1,3):
 # # print(f'{train_pd_dataframe.info()}')
 #
 # prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.HotMarkerDataset(train_set,9)
-test_Dataset = createtorchdataset.HotMarkerDataset(test_set,9)
+train_Dataset = createtorchdataset.HotMarkerDataset(train_set, 9)
+test_Dataset = createtorchdataset.HotMarkerDataset(test_set, 9)
 
 # put Datasets into DataLoader objects
 batch_size = 50
