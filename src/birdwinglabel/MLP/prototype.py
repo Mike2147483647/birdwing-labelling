@@ -3,10 +3,10 @@ import torch
 from torch.utils.data import DataLoader
 from torch import nn
 
-from birdwinglabel.dataprocessing import createtorchdataset, data
+from birdwinglabel.dataprocessing import data
 from birdwinglabel.dataprocessing.data import full_bilateral_markers
 
-from birdwinglabel.common import trainandtest
+from birdwinglabel.common import trainandtest, createtorchdataset
 
 # find device to train nn
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -28,8 +28,8 @@ test_pd_dataframe = (
 print(f'{train_pd_dataframe.info()}')
 
 # prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe,8)
-test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe,8)
+train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe, 8)
+test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe, 8)
 
 # put Datasets into DataLoader objects
 batch_size = 50

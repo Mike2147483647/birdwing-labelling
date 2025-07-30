@@ -1,12 +1,5 @@
-import pandas as pd
 import torch
-from torch.utils.data import DataLoader
 from torch import nn
-
-from birdwinglabel.dataprocessing import createtorchdataset, data
-from birdwinglabel.dataprocessing.data import full_bilateral_markers
-
-from birdwinglabel.common import trainandtest
 
 # find device to train nn
 device = "cuda" if torch.cuda.is_available() else "cpu"
