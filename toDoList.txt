@@ -53,6 +53,26 @@ must rename to 'markers_matrix' for data matrices
 maybe move createtraining to the actual training files, not under data
 
 
+EncDec Transformer
+main idea:
+    xyz (with missing and extra markers) -> labels -> xyz (only and all 8 markers)
+    loss for reals, cautious that mask does not allow the model to cheat
+ingredients:
+Encoder:
+    1. xyz coordinates in time sequence, each data points is [num_frames (seq_len), num_marker, 3 (3d coords)]
+        so we feed [N (num_seq), num_frames, num_marker, 3] into encoder
+    2. pad missing frames in the flight sequence, encoder_pad_mask to let the model know some of them are paddings
+    3. additive mask (position encoding), in atten_scr + src_mask before softmax in MHA, to make sure model doesnt know
+        things after the time point it is currently computing
+
+
+can compare predicted label of EncOnly to EncDec+EncOnly
+
+
 possibly useful resources:
 Geometry-Guided Diffusion Model with Masked Transformer for Robust Multi-View 3D Human Pose Estimation
 https://dl.acm.org/doi/abs/10.1145/3664647.3681265
+
+https://arxiv.org/abs/2407.07179
+TrackFormers: In Search of Transformer-Based Particle Tracking for...
+High-Energy Physics experiments are facing a multi-fold data increase with every new iteration. This is certainly the case for the upcoming High-Luminosity LHC upgrade. Such increased data...

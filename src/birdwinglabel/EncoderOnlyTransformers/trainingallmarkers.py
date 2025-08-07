@@ -10,7 +10,7 @@ from birdwinglabel.dataprocessing.data import full_bilateral_markers
 
 from birdwinglabel.common import trainandtest, prepforML, createtorchdataset
 
-from birdwinglabel.Transformers.basic import DecoderOnlyTransformer
+from birdwinglabel.EncoderOnlyTransformers.basic import IndptLabellingTransformer
 
 
 # load labelled dataset
@@ -142,7 +142,7 @@ train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
 test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
 
 # traning the model
-model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
+model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
 
 loss = nn.BCEWithLogitsLoss()
 optim = torch.optim.Adam(model.parameters())

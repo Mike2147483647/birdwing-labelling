@@ -129,3 +129,28 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
         print("Done!")
         torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
 
+
+def train_loop_aut(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+    # Set the model to training mode - important for batch normalization and dropout layer
+    model.train()
+
+    # X: inputs ; y: target
+    for batch, (src, tgt, src_pad_mask, tgt_pad_mask) in enumerate(dataloader):
+        # Compute prediction and loss
+        pred = model(src, tgt, src_pad_mask, tgt_pad_mask)
+        # print(f"pred shape: {pred.shape}, pred dtype: {pred.dtype}, X sample: {pred[:2]}")
+        loss = loss_fn(pred, tgt)
+
+        # Backpropagation
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        # visualisation of progress
+        if batch % 100 == 0:
+            loss, current = loss.item(), batch * X.shape[0] + len(X)    # X.shape[0] is batch size
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+
+
