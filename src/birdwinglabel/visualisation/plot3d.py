@@ -85,7 +85,7 @@ def plot_sequence(labelled_df):
     plt.show()
 
 
-data_dir =  Path(__file__).parent.parent / 'Transformers' / 'Transformer_labelled_df.pkl'
+data_dir =  Path(__file__).parent.parent / 'EncoderOnlyTransformers' / 'Transformer_labelled_df.pkl'
 transformer_labelled_df = pd.read_pickle(data_dir)
 
 if __name__ == '__main__':

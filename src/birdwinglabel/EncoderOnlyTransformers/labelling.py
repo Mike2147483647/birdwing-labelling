@@ -9,7 +9,7 @@ import birdwinglabel.dataprocessing.data as data
 from birdwinglabel.dataprocessing.data import full_no_labels
 
 from birdwinglabel.common import prepforML
-from birdwinglabel.Transformers.basic import DecoderOnlyTransformer
+from birdwinglabel.EncoderOnlyTransformers.basic import IndptLabellingTransformer
 
 
 # subset and prepare the unlabelled dataset for transformer
@@ -28,7 +28,7 @@ unlabelled_tensor = torch.tensor(unlabelled_matrix, dtype=torch.float32)
 print(f'unlabelled_tensor.shape: \n{unlabelled_tensor.shape}')
 
 # set up the transformer
-model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
+model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
 
 model.load_state_dict(torch.load('DecoderOnlyTransformer_weights.pth'))
 model.eval()

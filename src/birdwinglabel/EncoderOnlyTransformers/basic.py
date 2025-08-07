@@ -71,7 +71,7 @@ class BirdEmbedding(nn.Module):
 
 
 # adapted from course notes example
-class DecoderOnlyTransformer(nn.Module):
+class IndptLabellingTransformer(nn.Module):
     def __init__(self, embed_dim: int, num_heads: int, mlp_dim: int, num_layers: int, seq_len: int = 8, dropout: float=0.1, num_class:int = 8):
         super().__init__()
 
@@ -109,7 +109,7 @@ class DecoderOnlyTransformer(nn.Module):
         return logits
 
 
-# model = DecoderOnlyTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
+# model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
 #
 # loss = nn.BCEWithLogitsLoss()
 # optim = torch.optim.Adam(model.parameters())

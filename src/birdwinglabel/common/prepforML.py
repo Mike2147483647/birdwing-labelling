@@ -24,13 +24,14 @@ def padding(x, final_length = 32):
 # simmissing_row def in global for higher customisability
 def simmissing_row(data_point, seed = 1):
     RNG = np.random.default_rng(seed=seed)
-    num_of_rows = data_point['markers_matrix'].shape[0]
+    num_of_rows = data_point.iloc[1].shape[0]
     marker_to_zero = RNG.integers(0,num_of_rows,size=1)
-    data_point['markers_matrix'][marker_to_zero] = np.zeros_like(data_point['markers_matrix'][marker_to_zero])
-    data_point['label'][marker_to_zero] = 0
+    data_point.iloc[1][marker_to_zero] = np.zeros_like(data_point.iloc[1][marker_to_zero])
+    data_point.iloc[2][marker_to_zero] = 0
     return data_point
 
 def simulate_missing(df, portion: float= 0.1, seed = 1):
+    df = df.reset_index(drop=True)
     RNG = np.random.default_rng(seed=seed)
     num_of_data = len(df)
     rows_to_set_zero = RNG.choice(range(0, num_of_data), size=int(np.floor(num_of_data * portion)),
