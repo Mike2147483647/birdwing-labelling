@@ -40,7 +40,7 @@ class HotMarkerDataset(Dataset):
 
 
 # Autoencoders
-class MarkerCoordsDataset(Dataset):
+class MarkerCoordsDataset_train(Dataset):
     def __init__(self, src_df, tgt_df):
         # src_df and tgt_df must have cols seqID, rot_xyz tensor [frame_count, max_marker, 3], padding mask [frame_count]
         # check num_seq of src is same as num_seq of tgt
@@ -57,5 +57,45 @@ class MarkerCoordsDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.src[idx], self.tgt[idx], self.src_key_padding_mask[idx], self.tgt_key_padding_mask[idx]
+
+
+class MarkerCoordsDataset_test(Dataset):
+    def __init__(self, src_df, seed_df, gold_df):
+        # src_df and gold_df must have cols seqID, rot_xyz tensor [frame_count, max_marker, 3], padding mask [frame_count]
+        # seed_df must have cols seqID, rot_xyz matrix [num_label, 3], num_labels = 8 for now
+        # seed_df must have same number of seq as src_df
+        assert len(src_df) == len(seed_df) == len(gold_df)
+        # [batch, data_tensor], batch = num_seq, data_tensor [frame, max_marker, 3]
+        self.src = [torch.tensor(x, dtype=torch.float32) for x in src_df['rot_xyz_tensor']]
+        self.src_key_padding_mask = [torch.tensor(x, dtype=torch.bool) for x in src_df['padding_mask']]
+        self.seed = [torch.tensor(x, dtype=torch.float32) for x in seed_df['rot_xyz']]
+        self.gold = [torch.tensor(x, dtype=torch.float32) for x in gold_df['rot_xyz_tensor']]
+        self.gold_key_padding_mask = [torch.tensor(x, dtype=torch.bool) for x in gold_df['padding_mask']]
+
+
+    def __len__(self):
+        return len(self.src)
+
+    def __getitem__(self, idx):
+        return self.src[idx], self.src_key_padding_mask[idx], self.seed[idx], self.gold[idx], self.gold_key_padding_mask[idx]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

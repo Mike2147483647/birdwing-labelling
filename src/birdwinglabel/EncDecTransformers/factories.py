@@ -36,9 +36,10 @@ class LinearPosEnc(nn.Module):
 # frequential posEnc from Attention is all you need, code from https://stackoverflow.com/questions/77444485/using-positional-encoding-in-pytorch accessed 20250806_1901
 class FrequentialPosEnc(nn.Module):
 
-    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
+    def __init__(self, max_marker: int = 32, xyz: int = 3, dropout: float = 0.1, max_len: int = 5000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
+        d_model = max_marker * xyz
 
         position = torch.arange(max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
@@ -67,10 +68,10 @@ class IdentifyMarkerTransformer(nn.Module):
             pos_enc: nn.Module,
             max_marker: int,
             frame_count: int,
-            num_head:int = 1,
-            num_encoder_layers:int = 1,
-            num_decoder_layers:int = 1,
-            dim_feedforward:int = 4,
+            num_head:int = 8,
+            num_encoder_layers:int = 6,
+            num_decoder_layers:int = 6,
+            dim_feedforward:int = 128,
             dropout: float = 0.1,
             backward: Boolean = False
     ):
@@ -85,7 +86,9 @@ class IdentifyMarkerTransformer(nn.Module):
             dropout=dropout,
             batch_first=True
         )
-        self.mask = self.transformer.generate_square_subsequent_mask(frame_count)
+        self.frame_count = frame_count
+        self.max_marker = max_marker
+        self.mask = self.transformer.generate_square_subsequent_mask(self.frame_count)
         self.backward = backward
         if self.backward:
             self.mask = torch.flip(self.mask, dims=[0,1])
@@ -131,7 +134,31 @@ class IdentifyMarkerTransformer(nn.Module):
         # output: [batch_size, frame_count, 8, 3]
 
 
+    def generate_sequence(self, seed_tgt: torch.Tensor, src, src_key_padding_mask):
+        # seed_tgt: [batch_size, num_label, 3]
+        # num_label should be same as training
 
+        tgt_length = self.frame_count
+        batch_size, num_label, xyz = seed_tgt.shape
+
+        # pad seed so that its [max_marker, 3]
+        padded_seed = torch.zeros((batch_size, self.max_marker, xyz), dtype=seed_tgt.dtype, device=seed_tgt.device)
+        padded_seed[:, :num_label, :] = seed_tgt
+
+        tgt_tensor = torch.zeros((batch_size, tgt_length, self.max_marker, 3), dtype=torch.float32)
+        tgt_padding_mask = torch.zeros(tgt_length, dtype=torch.float32)     # dummy mask
+
+        tgt_tensor[:,0,:,:] = padded_seed.to(torch.float32)
+        for current_time in range(1,tgt_length):
+            static_pred = self.forward(
+                src = src,
+                src_key_padding_mask = src_key_padding_mask,
+                tgt = tgt_tensor,
+                tgt_key_padding_mask= tgt_padding_mask
+            )
+            tgt_tensor[:,current_time, :,:] = static_pred[:,current_time,:,:]
+        # tgt_tensor [batch_size, tgt_length, num_label, 3]
+        return tgt_tensor
 
 
 

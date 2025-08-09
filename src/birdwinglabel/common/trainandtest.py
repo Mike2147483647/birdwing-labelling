@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
 
+from birdwinglabel.EncDecTransformers.factories import IdentifyMarkerTransformer
 
 
 # code adapted from https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html 20250703_1555
@@ -124,8 +125,12 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
         print("Model architecture:\n", model)
         for t in range(epochs):
             print(f"Epoch {t + 1}\n-------------------------------")
-            train_loop(train_dataloader, model, loss_fn, optimizer)
-            test_loop(test_dataloader, model, loss_fn)
+            if isinstance(model, IdentifyMarkerTransformer):
+                train_loop_aut(train_dataloader, model, loss_fn, optimizer)
+                test_loop_aut(test_dataloader, model, loss_fn)
+            else:
+                train_loop(train_dataloader, model, loss_fn, optimizer)
+                test_loop(test_dataloader, model, loss_fn)
         print("Done!")
         torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
 
@@ -134,8 +139,8 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     # Set the model to training mode - important for batch normalization and dropout layer
     model.train()
+    update_interval = max(1, size // 10)
 
-    # X: inputs ; y: target
     for batch, (src, tgt, src_pad_mask, tgt_pad_mask) in enumerate(dataloader):
         # Compute prediction and loss
         pred = model(src, tgt, src_pad_mask, tgt_pad_mask)
@@ -148,9 +153,60 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer):
         optimizer.zero_grad()
 
         # visualisation of progress
-        if batch % 100 == 0:
-            loss, current = loss.item(), batch * X.shape[0] + len(X)    # X.shape[0] is batch size
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        current = batch * src.shape[0] + len(src)
+        if current % update_interval < src.shape[0]:
+            percent = int(100 * current / size)
+            print(f"loss: {loss.item():>7f}  [{current:>5d}/{size:>5d}] ({percent}%)")
+
+
+def test_loop_aut(dataloader, model: IdentifyMarkerTransformer, loss_fn):
+    model.eval()
+    num_seq = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss = 0
+    total_frames, within_5, within_10, within_20 = 0, 0, 0, 0
+    # print(f'check test dataloader iter {next(iter(dataloader))}')
+
+    for batch, (src, src_pad_mask, seed, gold, gold_pad_mask) in enumerate(dataloader):
+        # print(f'in loop now')
+        # compute prediction: [batch_size, tgt_length, num_label, 3]
+        pred = model.generate_sequence(seed_tgt=seed,src=src,src_key_padding_mask=src_pad_mask)
+        # compare with gold also [batch_size, tgt_length, num_label, 3], but only compare with non padded entries
+        # gold_pad_mask: [batch_size, frame_count], True for padding
+        not_padded = ~gold_pad_mask  # [batch_size, frame_count]
+        # Compute loss only on non-padded frames
+        loss = loss_fn(pred[not_padded], gold[not_padded])
+        test_loss += loss.item()
+
+        # Compute per-marker L1 error
+        abs_error = torch.abs(pred - gold).sum(dim=-1)  # [batch, frame_count, num_marker]
+        gold_l1 = torch.abs(gold).sum(dim=-1).clamp(min=1e-8)  # avoid div by zero
+        rel_error = abs_error / gold_l1  # relative error
+
+        # Compute max relative error per frame (across all markers)
+        frame_max_error = rel_error.max(dim=-1).values  # [batch, frame_count]
+
+        # Mask out padded frames
+        frame_max_error = frame_max_error[not_padded]
+
+        total_frames += frame_max_error.numel()
+        within_5 += (frame_max_error < 0.05).sum().item()
+        within_10 += (frame_max_error < 0.10).sum().item()
+        within_20 += (frame_max_error < 0.20).sum().item()
+
+    print(f'''
+    Average loss per sequence: {test_loss / num_seq:.6f}
+    Average loss per frame: {test_loss / total_frames:.6f}
+    Proportion of frames that has <5% error: {within_5 / total_frames:.6f}
+    Proportion of frames that has <10% error: {within_10 / total_frames:.6f}
+    Proportion of frames that has <20% error: {within_20 / total_frames:.6f}
+    ''')
+
+
+
+
+
+
 
 
 

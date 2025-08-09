@@ -7,9 +7,11 @@ from pathlib import Path
 
 import birdwinglabel.dataprocessing.data as data
 from birdwinglabel.common import prepforML, createtorchdataset
-from birdwinglabel.common.createtorchdataset import MarkerCoordsDataset
+from birdwinglabel.common.createtorchdataset import MarkerCoordsDataset_train, MarkerCoordsDataset_test
 from birdwinglabel.common.prepforML import simulate_missing
 from birdwinglabel.EncDecTransformers.factories import LinearPosEnc, FrequentialPosEnc, IdentifyMarkerTransformer
+from birdwinglabel.common.trainandtest import trainandtest
+
 
 # import datasets
 df_dir = Path(__file__).parent.parent / "dataprocessing"
@@ -19,8 +21,8 @@ tgt_df = pd.read_pickle(df_dir / "tgt_df.pkl")
 
 # subset to train_src, train_tgt, test_src
 seqID = data.get_list_of_seqID(src_df)
-train_seqs = [seqID[i] for i in range(0,10)]    # choose here
-test_seqs = [seqID[i] for i in range(10,15)]
+train_seqs = [seqID[i] for i in range(0,100)]    # choose here
+test_seqs = [seqID[i] for i in range(100,110)]
 
 train_src = data.subset_by_seqID(src_df, train_seqs)
 test_src = data.subset_by_seqID(src_df, test_seqs)
@@ -39,7 +41,8 @@ def preparation(*dfs):
 
     return tuple(process(df) for df in dfs)
 
-train_src, train_tgt, test_src, test_tgt = preparation(train_src, train_tgt, test_src, test_tgt)
+train_src, train_tgt, test_src = preparation(train_src, train_tgt, test_src)
+test_tgt.loc[:, 'frameID'] = test_tgt['frameID'].str.split('_').str[-1].astype(int)
 
 train_src = simulate_missing(train_src)
 test_src = test_src.copy()
@@ -81,17 +84,47 @@ def as_seqn_tensor(df, max_marker: int = 32, frame_count: int = 500):
     return pd.DataFrame(results)
 
 
+def as_seed_df(df, backward = False):
+    # df has cols: frameID, rot_xyz, (label,) seqID
+    results = []
+    for seqID, group in df.groupby('seqID'):
+        if backward:
+            row = group.loc[group['frameID'].idxmax()]
+        else:
+            row = group.loc[group['frameID'].idxmin()]
+        results.append({
+            'seqID': seqID,
+            'rot_xyz': row['rot_xyz'],
+            'frameID': row['frameID']
+        })
+    return pd.DataFrame(results)
+
+
+# print(f'test_tgt before: {test_tgt.iloc[0:5]}')
+# print(f'test_tgt after: {as_seed_df(test_tgt).iloc[0:5]}')
+
+
 print(f'before: {train_tgt.iloc[0,1]}')
 
 train_src = as_seqn_tensor(train_src)
 train_tgt = as_seqn_tensor(train_tgt)
-train_dataset = MarkerCoordsDataset(train_src, train_tgt)
+train_dataset = MarkerCoordsDataset_train(train_src, train_tgt)
 train_dataloader = DataLoader(train_dataset, batch_size = 10)
 
-pos_enc = LinearPosEnc()
+test_src = as_seqn_tensor(test_src)
+test_seed = as_seed_df(test_tgt)
+test_gold_tgt = as_seqn_tensor(test_tgt)
+test_dataset = MarkerCoordsDataset_test(test_src, test_seed, test_gold_tgt)
+test_dataloader = DataLoader(test_dataset, batch_size=1)
+
+
+
+pos_enc = FrequentialPosEnc()
 model = IdentifyMarkerTransformer(pos_enc=pos_enc, max_marker=32, frame_count=500)
-for _, (src, tgt, src_pad_mask, tgt_pad_mask) in enumerate(train_dataloader):
-    model(src, tgt, src_pad_mask, tgt_pad_mask)
+loss = nn.L1Loss()
+optim = torch.optim.Adam(model.parameters())
+trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=10)
+
 
 
 
