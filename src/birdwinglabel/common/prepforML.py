@@ -9,15 +9,21 @@ from torch import nn
 # pad the matrices to have 32 rows, apply it over col of matrix
 def padding(x, final_length = 32):
     if x.ndim == 1:
-        # Pad 1D vector
-        pad_width = (0, final_length - len(x))
-        return np.pad(x, pad_width, mode='constant')
+        padded = np.zeros(final_length, dtype=x.dtype)
+        mask = np.ones(final_length, dtype=np.int32)
+        length = min(len(x), final_length)
+        padded[:length] = x[:length]
+        mask[:length] = 0
+        return padded, mask
     elif x.ndim == 2:
-        # Pad 2D matrix (pad rows)
-        pad_width = ((0, final_length - x.shape[0]), (0, 0))
-        return np.pad(x, pad_width, mode='constant')
+        padded = np.zeros((final_length, x.shape[1]), dtype=x.dtype)
+        mask = np.ones(final_length, dtype=np.int32)
+        length = min(x.shape[0], final_length)
+        padded[:length, :] = x[:length, :]
+        mask[:length] = 0
+        return padded, mask
     else:
-        return x  # unchanged if not 1D or 2D
+        raise ValueError("Input must be 1D or 2D numpy array")
 
 
 # simulate missing markers by removing rows and its corresponding labels randomly
@@ -25,7 +31,8 @@ def padding(x, final_length = 32):
 def simmissing_row(data_point, seed = 1):
     RNG = np.random.default_rng(seed=seed)
     num_of_rows = data_point.iloc[1].shape[0]
-    marker_to_zero = RNG.integers(0,num_of_rows,size=1)
+    num_to_zero = RNG.integers(1, num_of_rows + 1)  # random number between 1 and num_of_rows
+    marker_to_zero = RNG.choice(num_of_rows, size=num_to_zero, replace=False)
     data_point.iloc[1][marker_to_zero] = np.zeros_like(data_point.iloc[1][marker_to_zero])
     data_point.iloc[2][marker_to_zero] = 0
     return data_point
@@ -39,6 +46,14 @@ def simulate_missing(df, portion: float= 0.1, seed = 1):
     df.loc[rows_to_set_zero] = df.loc[rows_to_set_zero].apply(simmissing_row, axis=1)
     return df
 
+# simulate missing marker for *a* rot_xyz matrix only
+def simmissing_marker(coord_matrix, seed = 1):
+    RNG = np.random.default_rng(seed=seed)
+    num_marker = coord_matrix.shape[0]
+    num_to_remain = RNG.integers(0, num_marker)
+    marker_to_remain = RNG.choice(num_marker, size=num_to_remain, replace=False)
+    coord_matrix = coord_matrix[marker_to_remain]
+    return coord_matrix
 
 # randomize the rows of coords matrix and labels of each data point
 def permute(data_point, seed = 1):
