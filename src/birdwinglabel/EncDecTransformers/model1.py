@@ -7,9 +7,9 @@ from pathlib import Path
 
 import birdwinglabel.dataprocessing.data as data
 from birdwinglabel.common import prepforML, createtorchdataset
-from birdwinglabel.common.createtorchdataset import MarkerCoordsDataset_train, MarkerCoordsDataset_test
+from birdwinglabel.common.createtorchdataset import MarkerTimeDptDataset_train, MarkerTimeDptDataset_test
 from birdwinglabel.common.prepforML import simulate_missing
-from birdwinglabel.EncDecTransformers.factories import LinearPosEnc, FrequentialPosEnc, IdentifyMarkerTransformer
+from birdwinglabel.EncDecTransformers.factories import LinearPosEnc, FrequentialPosEnc, IdentifyMarkerTimeDptTransformer
 from birdwinglabel.common.trainandtest import trainandtest
 
 
@@ -41,7 +41,8 @@ def preparation(*dfs):
 
     return tuple(process(df) for df in dfs)
 
-train_src, train_tgt, test_src = preparation(train_src, train_tgt, test_src)
+train_src,test_src = preparation(train_src, test_src)
+train_tgt.loc[:, 'frameID'] = train_tgt['frameID'].str.split('_').str[-1].astype(int)
 test_tgt.loc[:, 'frameID'] = test_tgt['frameID'].str.split('_').str[-1].astype(int)
 
 train_src = simulate_missing(train_src)
@@ -51,26 +52,30 @@ test_src = simulate_missing(test_src)
 # stack by seqID, each row is [frameID, rot_xyz] or equiv [frameID, num_marker, 3]
 # here num_data = number of seq, seq_length = number of frames, feat_dim = nun_marker x 3
 
-def as_seqn_tensor(df, max_marker: int = 32, frame_count: int = 500):
+def as_seqn_tensor(df, max_marker: int = 32, frame_count: int = 100):
     # df has cols: frameID, rot_xyz, (label,) seqID
     results = []
     for seqID, group in df.groupby('seqID'):
         # get all frameID and find min max
         frame_ids = group['frameID'].values
-        min_frame, max_frame = frame_ids.min(), frame_ids.max()
-        num_frames = max_frame - min_frame + 1
+        min_frame = frame_ids.min()
+        max_valid_frame = min_frame + frame_count - 1
+        # Discard frames outside the valid range
+        group = group[(group['frameID'] >= min_frame) & (group['frameID'] <= max_valid_frame)]
+        if group.empty:
+            continue
 
         # pad rot_xyz to be [max_marker, 3] for all frames
-        group['rot_xyz'] = group['rot_xyz'].apply(lambda x: prepforML.padding(x, max_marker))
+        group.loc[:, 'rot_xyz'] = group['rot_xyz'].apply(lambda x: prepforML.padding(x, max_marker))
 
         # Prepare storage
         rot_xyz_tensor = np.zeros((frame_count, max_marker, 3), dtype=np.float32)
         padding_mask = np.ones(frame_count, dtype=bool)  # True = padding
 
         # Fill in available frames
-        frameid_to_idx = {fid: i for i, fid in enumerate(range(min_frame, max_frame + 1))}
+        # frameid_to_idx = {fid: i for i, fid in enumerate(range(min_frame, max_frame + 1))} deprecated
         for _, row in group.iterrows():
-            idx = frameid_to_idx[row['frameID']]
+            idx = row['frameID'] - min_frame
             rot_xyz_tensor[idx] = row['rot_xyz']
             padding_mask[idx] = False  # Not padding
 
@@ -108,22 +113,23 @@ print(f'before: {train_tgt.iloc[0,1]}')
 
 train_src = as_seqn_tensor(train_src)
 train_tgt = as_seqn_tensor(train_tgt)
-train_dataset = MarkerCoordsDataset_train(train_src, train_tgt)
-train_dataloader = DataLoader(train_dataset, batch_size = 10)
+train_dataset = MarkerTimeDptDataset_train(train_src, train_tgt, exp=True)
+train_dataloader = DataLoader(train_dataset, batch_size = 4)
 
 test_src = as_seqn_tensor(test_src)
 test_seed = as_seed_df(test_tgt)
 test_gold_tgt = as_seqn_tensor(test_tgt)
-test_dataset = MarkerCoordsDataset_test(test_src, test_seed, test_gold_tgt)
+test_dataset = MarkerTimeDptDataset_test(test_src, test_seed, test_gold_tgt, exp=True)
 test_dataloader = DataLoader(test_dataset, batch_size=1)
 
+# input(f'press Enter to start training: ')
 
-
-pos_enc = FrequentialPosEnc()
-model = IdentifyMarkerTransformer(pos_enc=pos_enc, max_marker=32, frame_count=500)
+pos_enc = LinearPosEnc()
+# model = IdentifyMarkerTimeDptTransformer(pos_enc=pos_enc, max_marker=32, frame_count=100)
+model = IdentifyMarkerTimeDptTransformer(pos_enc=pos_enc, max_marker=32, frame_count=100, num_head=8, num_encoder_layers=4, num_decoder_layers=4, dim_feedforward=128)
 loss = nn.L1Loss()
 optim = torch.optim.Adam(model.parameters())
-trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=10)
+trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=32)
 
 
 

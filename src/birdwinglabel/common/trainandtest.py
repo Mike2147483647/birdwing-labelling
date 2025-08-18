@@ -4,8 +4,9 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
+import pathlib
 
-from birdwinglabel.EncDecTransformers.factories import IdentifyMarkerTransformer
+from birdwinglabel.EncDecTransformers.factories import IdentifyMarkerTimeDptTransformer, IdentifyMarkerTimeIndptTransformer
 
 
 # code adapted from https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html 20250703_1555
@@ -101,7 +102,7 @@ def test_loop(dataloader, model, loss_fn):
 
 
 
-def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file='train_log.txt'):
+def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file=f'{pathlib.Path(__file__).name}_train_log.txt'):
 
     # train and test dataloader are instance of DataLoader using train and test data
     # prepare class to output console ouput in txt while keeping the usual console output
@@ -125,17 +126,20 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
         print("Model architecture:\n", model)
         for t in range(epochs):
             print(f"Epoch {t + 1}\n-------------------------------")
-            if isinstance(model, IdentifyMarkerTransformer):
+            if isinstance(model, IdentifyMarkerTimeDptTransformer):
+                train_loop_aut_seq(train_dataloader, model, loss_fn, optimizer)
+                test_loop_aut_seq(test_dataloader, model, loss_fn)
+            elif isinstance(model, IdentifyMarkerTimeIndptTransformer):
                 train_loop_aut(train_dataloader, model, loss_fn, optimizer)
                 test_loop_aut(test_dataloader, model, loss_fn)
             else:
                 train_loop(train_dataloader, model, loss_fn, optimizer)
                 test_loop(test_dataloader, model, loss_fn)
         print("Done!")
-        torch.save(model.state_dict(), f'{model.__class__.__name__}_weights.pth')
+        torch.save(model.state_dict(), f'{pathlib.Path(__file__).name}_{model.__class__.__name__}_weights.pth')
 
 
-def train_loop_aut(dataloader, model, loss_fn, optimizer):
+def train_loop_aut_seq(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     # Set the model to training mode - important for batch normalization and dropout layer
     model.train()
@@ -145,7 +149,10 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer):
         # Compute prediction and loss
         pred = model(src, tgt, src_pad_mask, tgt_pad_mask)
         # print(f"pred shape: {pred.shape}, pred dtype: {pred.dtype}, X sample: {pred[:2]}")
-        loss = loss_fn(pred, tgt)
+        # Mask: [batch, frame_count]
+        not_padded = ~tgt_pad_mask
+        # pred, tgt: [batch, frame_count, num_marker, 3]
+        loss = loss_fn(pred[not_padded], tgt[not_padded])
 
         # Backpropagation
         loss.backward()
@@ -159,7 +166,7 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer):
             print(f"loss: {loss.item():>7f}  [{current:>5d}/{size:>5d}] ({percent}%)")
 
 
-def test_loop_aut(dataloader, model: IdentifyMarkerTransformer, loss_fn):
+def test_loop_aut_seq(dataloader, model: IdentifyMarkerTimeDptTransformer, loss_fn):
     model.eval()
     num_seq = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -169,30 +176,65 @@ def test_loop_aut(dataloader, model: IdentifyMarkerTransformer, loss_fn):
 
     for batch, (src, src_pad_mask, seed, gold, gold_pad_mask) in enumerate(dataloader):
         # print(f'in loop now')
+        print(f'seed values: {seed}')
         # compute prediction: [batch_size, tgt_length, num_label, 3]
         pred = model.generate_sequence(seed_tgt=seed,src=src,src_key_padding_mask=src_pad_mask)
+        print(f'shape of pred: {pred.shape}')
         # compare with gold also [batch_size, tgt_length, num_label, 3], but only compare with non padded entries
         # gold_pad_mask: [batch_size, frame_count], True for padding
         not_padded = ~gold_pad_mask  # [batch_size, frame_count]
+        print(f'shape of not_padded indicator: {not_padded.shape}')
+
+        # only [batch_size, tgt_length, 8, 3] is needed since we padded 8 to num_label
+        pred = pred[:, :, :8, :]
+        gold = gold[:, :, :8, :]
+
+        # only non padded frames are needed
+        pred = pred[not_padded]
+        gold = gold[not_padded]
+
+        # transform pred to normal scale instead of exp
+        if dataloader.dataset.exp_trans:
+            pred = torch.log(pred.clamp_min(1e-6))
+
         # Compute loss only on non-padded frames
-        loss = loss_fn(pred[not_padded], gold[not_padded])
+        loss = loss_fn(pred, gold)
         test_loss += loss.item()
 
-        # Compute per-marker L1 error
-        abs_error = torch.abs(pred - gold).sum(dim=-1)  # [batch, frame_count, num_marker]
-        gold_l1 = torch.abs(gold).sum(dim=-1).clamp(min=1e-8)  # avoid div by zero
-        rel_error = abs_error / gold_l1  # relative error
+        print(f'pred first frame: {pred[0,:,:]}')
+        print(f'gold first frame: {gold[ 0, :, :]}')
+
+        # Compute per-marker L2 norm
+        l2_error = torch.norm(pred - gold, p=2, dim=-1)  # [batch, frame_count, num_marker]
+        gold_l2 = torch.norm(gold, p=2, dim=-1)
+                   # .clamp(min=1e-8))  # avoid div by zero
+        rel_error = l2_error / gold_l2  # relative error
+
+
+        print(f'gold_l2 shape: {gold_l2.shape} \ngold_l2 value: {gold_l2}')
+        print(f'l2_error shape: {l2_error.shape} \nl2_error value: {l2_error}')
 
         # Compute max relative error per frame (across all markers)
         frame_max_error = rel_error.max(dim=-1).values  # [batch, frame_count]
 
+
         # Mask out padded frames
-        frame_max_error = frame_max_error[not_padded]
+        # frame_max_error = frame_max_error[not_padded]
+        print(f'shape of frame_max_error: {frame_max_error.shape}')
+        print(f'frame_max_error: {frame_max_error}')
 
         total_frames += frame_max_error.numel()
         within_5 += (frame_max_error < 0.05).sum().item()
         within_10 += (frame_max_error < 0.10).sum().item()
         within_20 += (frame_max_error < 0.20).sum().item()
+
+
+    print(f'''
+    total number of frames testing: {total_frames}
+    number of frames <5% error: {within_5}
+    number of frames <10% error: {within_10}
+    number of frames <20% error: {within_20}
+    ''')
 
     print(f'''
     Average loss per sequence: {test_loss / num_seq:.6f}
@@ -201,7 +243,70 @@ def test_loop_aut(dataloader, model: IdentifyMarkerTransformer, loss_fn):
     Proportion of frames that has <10% error: {within_10 / total_frames:.6f}
     Proportion of frames that has <20% error: {within_20 / total_frames:.6f}
     ''')
+    # input(f'press Enter to move onto next epoch: ')
 
+def train_loop_aut(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+    # Set the model to training mode - important for batch normalization and dropout layer
+    model.train()
+    update_interval = max(1, size // 10)
+
+    for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(dataloader):
+        # Compute prediction and loss
+        pred = model(src, tgt, src_mask, tgt_mask)
+        loss = loss_fn(pred, gold)
+
+        # Backpropagation
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        # visualisation of progress
+        current = batch * src.shape[0] + len(src)
+        if current % update_interval < src.shape[0]:
+            percent = int(100 * current / size)
+            print(f"loss: {loss.item():>7f}  [{current:>5d}/{size:>5d}] ({percent}%)")
+
+
+
+def test_loop_aut(dataloader, model, loss_fn):
+    model.eval()
+    num_frame = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss = 0
+    loss, within_5, within_10, within_20 = 0, 0, 0, 0
+    # print(f'check test dataloader iter {next(iter(dataloader))}')
+
+    for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(dataloader):
+        batch_size = gold.shape[0]
+        pred = model(src, tgt, src_mask, tgt_mask)  # [batch, 8, 3]
+        loss += loss_fn(pred, gold) * batch_size    # loss_fn uses default 'mean' mode, so multiply by batch size to get sum
+
+        # Compute per-marker L2 norm
+        l2_error = torch.norm(pred - gold, p=2, dim=-1)  # [batch, 8]
+        gold_l2 = torch.norm(gold, p=2, dim=-1)
+        # .clamp(min=1e-8))  # avoid div by zero
+        rel_error = l2_error / gold_l2  # relative error [batch, 8]
+
+        # debug
+        if batch == 1:
+            print(f'pred sample: {pred[2]} \ngold sample: {gold[2]} \nrelative error: {rel_error[2]}')
+
+        # Compute max relative error per frame (across all markers)
+        frame_max_error = rel_error.max(dim=-1).values  # [batch]
+
+        within_5 += (frame_max_error < 0.05).sum().item()
+        within_10 += (frame_max_error < 0.10).sum().item()
+        within_20 += (frame_max_error < 0.20).sum().item()
+
+
+
+    print(f'''
+    test loss avg over frame: {loss / num_frame} 
+    Proportion of frames that has <5% error: {within_5 / num_frame:.6f}
+    Proportion of frames that has <10% error: {within_10 / num_frame:.6f}
+    Proportion of frames that has <20% error: {within_20 / num_frame:.6f}
+    ''')
 
 
 

@@ -3,6 +3,7 @@ from sympy.logic.boolalg import Boolean
 from torch import nn
 import math
 
+
 # find device to train nn
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
@@ -62,16 +63,16 @@ class FrequentialPosEnc(nn.Module):
         return self.dropout(x)
 
 
-class IdentifyMarkerTransformer(nn.Module):
+class IdentifyMarkerTimeDptTransformer(nn.Module):
     def __init__(
             self,
             pos_enc: nn.Module,
             max_marker: int,
             frame_count: int,
-            num_head:int = 8,
-            num_encoder_layers:int = 6,
-            num_decoder_layers:int = 6,
-            dim_feedforward:int = 128,
+            num_head:int = 1,
+            num_encoder_layers:int = 1,
+            num_decoder_layers:int = 1,
+            dim_feedforward:int = 4,
             dropout: float = 0.1,
             backward: Boolean = False
     ):
@@ -161,10 +162,71 @@ class IdentifyMarkerTransformer(nn.Module):
         return tgt_tensor
 
 
+class BirdEmbedding(nn.Module):
+    def __init__(self, num_marker:int ,in_dim=3, out_dim=32):
+        super().__init__()
+        # project 3d coords to embed_dim
+        self.num_marker = num_marker
+        self.out_dim = out_dim
+        self.proj = nn.Linear(num_marker*in_dim, num_marker*out_dim)
+        self.flatten = nn.Flatten(start_dim=1)
+
+    def forward(self, x):
+        # x: [batch_size, seq_len, 3]
+        batch_size = x.size(0)
+        x = self.flatten(x)     # x: [batch_size, seq_len * 3]
+        x = self.proj(x)  # [batch_size, seq_len * embed_dim]
+        x = x.view(batch_size, self.num_marker, self.out_dim)
+        return x
 
 
+class IdentifyMarkerTimeIndptTransformer(nn.Module):
+    def __init__(self,
+                 embed_dim:int,
+                 num_head: int = 1,
+                 num_encoder_layers: int = 1,
+                 num_decoder_layers: int = 1,
+                 dim_feedforward: int = 4,
+                 dropout: float=0.1,
+                 coord_dim:int = 3,
+                 tgt_marker:int = 8,
+                 src_marker:int = 32
+                 ):
+        super().__init__()
+        self.num_head = num_head
+        self.coord_dim = coord_dim
+        self.tgt_marker = tgt_marker
+
+        self.flatten = nn.Flatten(start_dim=1)
+        self.src_in_embed_layer = BirdEmbedding(num_marker=src_marker, in_dim=coord_dim, out_dim=embed_dim)
+        self.tgt_in_embed_layer = BirdEmbedding(num_marker=tgt_marker, in_dim=coord_dim, out_dim=embed_dim)
+        self.out_embed_layer = BirdEmbedding(num_marker=tgt_marker, in_dim=embed_dim, out_dim=coord_dim)
+        self.transformer = nn.Transformer(d_model=embed_dim,
+                                          nhead=num_head,
+                                          num_encoder_layers=num_encoder_layers,
+                                          num_decoder_layers=num_decoder_layers,
+                                          dim_feedforward=dim_feedforward,
+                                          dropout=dropout,
+                                          batch_first=True)
 
 
+    def forward(self, src: torch.Tensor, tgt: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor):
+        '''
+        :param src: dim: [batch, max_marker, 3]
+        :param tgt: dim: [batch, 8, 3]
+        :param src_mask: [batch, max_marker]
+        :param tgt_mask: [batch, 8]
+        :return: [batch, 8, 3]
+        '''
+
+        src_embedded = self.src_in_embed_layer(src)     # [batch, max_marker, embed_dim]
+        tgt_embedded = self.tgt_in_embed_layer(tgt)     # [batch, 8, embed_dim]
+        src_mask_expanded = src_mask.unsqueeze(2).expand(-1, -1, src_mask.shape[1]).repeat_interleave(self.num_head, dim=0)
+        tgt_mask_expanded = tgt_mask.unsqueeze(2).expand(-1, -1, tgt_mask.shape[1]).repeat_interleave(self.num_head, dim=0)
+        output = self.transformer(src=src_embedded, src_mask=src_mask_expanded, tgt=tgt_embedded)
+        # [batch, 8, embed_dim]
+        output = self.out_embed_layer(output)        # [batch, 8, embed_dim]
+        return output
 
 
 
