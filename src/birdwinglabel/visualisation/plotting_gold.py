@@ -15,7 +15,7 @@ data_dir = Path(__file__).parent.parent / 'dataprocessing' / 'labelled_df.pkl'
 labelled_df = pd.read_pickle(data_dir)
 
 seqID_list = data.get_list_of_seqID(data.full_bilateral_markers)
-sample_seqID = seqID_list[3]
+sample_seqID = seqID_list[1]
 sample_data_without_label = data.subset_by_seqID(data.full_bilateral_markers, [sample_seqID])
 sample_frameID = data.get_list_of_frameID(sample_data_without_label)
 sample_df = data.subset_by_frameID(labelled_df, sample_frameID)

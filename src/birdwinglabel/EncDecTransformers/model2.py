@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from pathlib import Path
+import random
 
 import birdwinglabel.dataprocessing.data as data
 from birdwinglabel.common import prepforML, createtorchdataset
@@ -22,8 +23,10 @@ tgt_df = pd.read_pickle(df_dir / "tgt_df.pkl")
 
 # subset to train_src, train_tgt, test_src
 seqID = data.get_list_of_seqID(src_df)
-train_seqs = [seqID[i] for i in range(0,400)]    # choose here
-test_seqs = [seqID[i] for i in range(1000,1050)]
+random.seed(1)
+sample_idx = random.sample( range(len(seqID)), 450 )
+train_seqs = [seqID[i] for i in sample_idx[0:400]]    # choose here
+test_seqs = [seqID[i] for i in sample_idx[400:450]]
 
 train_src = data.subset_by_seqID(src_df, train_seqs)
 test_src = data.subset_by_seqID(src_df, test_seqs)
@@ -73,7 +76,7 @@ test_dataloader = DataLoader(test_dataset, batch_size=10)
 
 model = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128)
 loss = nn.L1Loss()
-optim = torch.optim.Adam(model.parameters())
+optim = torch.optim.AdamW(model.parameters())
 trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=50)
 
 

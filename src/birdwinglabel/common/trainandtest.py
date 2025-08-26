@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
 import pathlib
+import sys
+import contextlib
 
 from birdwinglabel.EncDecTransformers.factories import IdentifyMarkerTimeDptTransformer, IdentifyMarkerTimeIndptTransformer
 
@@ -67,7 +69,7 @@ def test_loop(dataloader, model, loss_fn):
             elif isinstance(loss_fn, torch.nn.BCEWithLogitsLoss):
                 # y: [batch, num_marker, num_labels], pred: [batch, num_marker, num_labels]
                 max_indices = torch.argmax(pred, dim=2)  # shape: [batch, num_marker]
-                # print(f"sample max_indices: {max_indices[0]}")
+                print(f"sample max_indices: {max_indices[0]} \nsample y: {y[0]}")
                 pred_labels = F.one_hot(max_indices, num_classes=pred.shape[2])  # shape: [batch, num_marker, num_labels]
                 pred_labels = pred_labels.float()
                 # print(f"sample pred_labels: {pred_labels[0]}")
@@ -96,18 +98,17 @@ def test_loop(dataloader, model, loss_fn):
     accuracy = 100 * correct / total_labels
     true_positive_rate = 100 * true_positive / actual_positive if actual_positive > 0 else 0
     accuracy_per_frame = total_frame_correct / size
-    print(f"Test Error: \nAccuracy per entry: {accuracy:>0.1f}%, Avg loss: {test_loss:>8f}")
-    print(f"Accuracy per marker: {true_positive} ({true_positive_rate:>0.1f}%)")
-    print(f"Accuracy per frame: {accuracy_per_frame:>0.1f} ({total_frame_correct} / {size})")
+    print(f"Test Error: \nAccuracy per entry: {accuracy:>6.3f}%, Avg loss: {test_loss:>8f}")
+    print(f"Accuracy per marker: {true_positive} ({true_positive_rate:>6.3f}%)")
+    print(f"Accuracy per frame: {accuracy_per_frame:>6.3f} ({total_frame_correct} / {size})")
 
 
 
-def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file=f'{pathlib.Path(__file__).name}_train_log.txt'):
+def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, epochs = 10, log_file=f'{pathlib.Path(sys.argv[0]).stem}_train_log.txt'):
 
     # train and test dataloader are instance of DataLoader using train and test data
     # prepare class to output console ouput in txt while keeping the usual console output
-    import sys
-    import contextlib
+
 
     class Tee:
         def __init__(self, file):
@@ -130,13 +131,13 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
                 train_loop_aut_seq(train_dataloader, model, loss_fn, optimizer)
                 test_loop_aut_seq(test_dataloader, model, loss_fn)
             elif isinstance(model, IdentifyMarkerTimeIndptTransformer):
-                train_loop_aut(train_dataloader, model, loss_fn, optimizer)
+                train_loop_aut(train_dataloader, model, loss_fn, optimizer, epochs)
                 test_loop_aut(test_dataloader, model, loss_fn)
             else:
                 train_loop(train_dataloader, model, loss_fn, optimizer)
                 test_loop(test_dataloader, model, loss_fn)
         print("Done!")
-        torch.save(model.state_dict(), f'{pathlib.Path(__file__).name}_{model.__class__.__name__}_weights.pth')
+        torch.save(model.state_dict(), f'{pathlib.Path(sys.argv[0]).stem}_{model.__class__.__name__}_weights.pth')
 
 
 def train_loop_aut_seq(dataloader, model, loss_fn, optimizer):
@@ -245,7 +246,7 @@ def test_loop_aut_seq(dataloader, model: IdentifyMarkerTimeDptTransformer, loss_
     ''')
     # input(f'press Enter to move onto next epoch: ')
 
-def train_loop_aut(dataloader, model, loss_fn, optimizer):
+def train_loop_aut(dataloader, model, loss_fn, optimizer, epochs):
     size = len(dataloader.dataset)
     # Set the model to training mode - important for batch normalization and dropout layer
     model.train()

@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from torch import nn
+import random
 
 from birdwinglabel.dataprocessing import data
 from birdwinglabel.dataprocessing.data import full_bilateral_markers
@@ -14,14 +15,16 @@ from birdwinglabel.EncoderOnlyTransformers.basic import IndptLabellingTransforme
 # create training and test datasets
 seqID_list = data.get_list_of_seqID(full_bilateral_markers)
 print(seqID_list[0:50])
+random.seed(1)
+seqID_subset = random.sample(seqID_list, 110)
 train_pd_dataframe = (
     pd.DataFrame(full_bilateral_markers)
-    .pipe(data.subset_by_seqID, seqID_list[0:200])
+    .pipe(data.subset_by_seqID, seqID_subset[0:100])
     .pipe(data.create_training)
 )
 test_pd_dataframe = (
     pd.DataFrame(full_bilateral_markers)
-    .pipe(data.subset_by_seqID, seqID_list[200:300])
+    .pipe(data.subset_by_seqID, seqID_subset[100:110])
     .pipe(data.create_training)
 )
 print(f'{train_pd_dataframe.info()}')
@@ -36,8 +39,8 @@ train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
 test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
 
 # traning the model
-model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=12)
+model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3)
 
 loss = nn.BCEWithLogitsLoss()
-optim = torch.optim.Adam(model.parameters())
-trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=8)
+optim = torch.optim.AdamW(model.parameters())
+trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=20)

@@ -1,0 +1,185 @@
+Model architecture:
+ IndptLabellingTransformer(
+  (embed): BirdEmbedding(
+    (proj): Linear(in_features=3, out_features=32, bias=True)
+  )
+  (layers): ModuleList(
+    (0-2): 3 x TransformerBlock(
+      (self_attn): MultiheadAttention(
+        (out_proj): NonDynamicallyQuantizableLinear(in_features=32, out_features=32, bias=True)
+      )
+      (ln1): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+      (mlp): Sequential(
+        (0): Linear(in_features=32, out_features=128, bias=True)
+        (1): ReLU()
+        (2): Linear(in_features=128, out_features=32, bias=True)
+      )
+      (ln2): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+      (dropout): Dropout(p=0.1, inplace=False)
+    )
+  )
+  (ln): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (out): Linear(in_features=256, out_features=64, bias=True)
+)
+Epoch 1
+-------------------------------
+loss: 0.700546  [   50/ 9964]
+loss: 0.287643  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 93.750%, Avg loss: 0.177701
+Accuracy per marker: 4740 (75.000%)
+Accuracy per frame:  0.081 (64 / 790)
+Epoch 2
+-------------------------------
+loss: 0.183860  [   50/ 9964]
+loss: 0.107543  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.822%, Avg loss: 0.039299
+Accuracy per marker: 6275 (99.288%)
+Accuracy per frame:  0.956 (755 / 790)
+Epoch 3
+-------------------------------
+loss: 0.051925  [   50/ 9964]
+loss: 0.021442  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.953%, Avg loss: 0.007910
+Accuracy per marker: 6308 (99.810%)
+Accuracy per frame:  0.986 (779 / 790)
+Epoch 4
+-------------------------------
+loss: 0.010729  [   50/ 9964]
+loss: 0.007510  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.964%, Avg loss: 0.004205
+Accuracy per marker: 6311 (99.858%)
+Accuracy per frame:  0.990 (782 / 790)
+Epoch 5
+-------------------------------
+loss: 0.006769  [   50/ 9964]
+loss: 0.003192  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.964%, Avg loss: 0.002645
+Accuracy per marker: 6311 (99.858%)
+Accuracy per frame:  0.990 (782 / 790)
+Epoch 6
+-------------------------------
+loss: 0.003600  [   50/ 9964]
+loss: 0.002033  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.968%, Avg loss: 0.002036
+Accuracy per marker: 6312 (99.873%)
+Accuracy per frame:  0.991 (783 / 790)
+Epoch 7
+-------------------------------
+loss: 0.002156  [   50/ 9964]
+loss: 0.001484  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.972%, Avg loss: 0.001663
+Accuracy per marker: 6313 (99.889%)
+Accuracy per frame:  0.992 (784 / 790)
+Epoch 8
+-------------------------------
+loss: 0.001704  [   50/ 9964]
+loss: 0.001407  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.964%, Avg loss: 0.001711
+Accuracy per marker: 6311 (99.858%)
+Accuracy per frame:  0.990 (782 / 790)
+Epoch 9
+-------------------------------
+loss: 0.001572  [   50/ 9964]
+loss: 0.001118  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.968%, Avg loss: 0.001253
+Accuracy per marker: 6312 (99.873%)
+Accuracy per frame:  0.991 (783 / 790)
+Epoch 10
+-------------------------------
+loss: 0.001375  [   50/ 9964]
+loss: 0.001241  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.968%, Avg loss: 0.001355
+Accuracy per marker: 6312 (99.873%)
+Accuracy per frame:  0.991 (783 / 790)
+Epoch 11
+-------------------------------
+loss: 0.000863  [   50/ 9964]
+loss: 0.000639  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.968%, Avg loss: 0.001475
+Accuracy per marker: 6312 (99.873%)
+Accuracy per frame:  0.991 (783 / 790)
+Epoch 12
+-------------------------------
+loss: 0.000693  [   50/ 9964]
+loss: 0.013754  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.960%, Avg loss: 0.001628
+Accuracy per marker: 6310 (99.842%)
+Accuracy per frame:  0.989 (781 / 790)
+Epoch 13
+-------------------------------
+loss: 0.001149  [   50/ 9964]
+loss: 0.000544  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.972%, Avg loss: 0.000936
+Accuracy per marker: 6313 (99.889%)
+Accuracy per frame:  0.992 (784 / 790)
+Epoch 14
+-------------------------------
+loss: 0.002259  [   50/ 9964]
+loss: 0.000356  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.972%, Avg loss: 0.000914
+Accuracy per marker: 6313 (99.889%)
+Accuracy per frame:  0.992 (784 / 790)
+Epoch 15
+-------------------------------
+loss: 0.000834  [   50/ 9964]
+loss: 0.000303  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.976%, Avg loss: 0.000787
+Accuracy per marker: 6314 (99.905%)
+Accuracy per frame:  0.994 (785 / 790)
+Epoch 16
+-------------------------------
+loss: 0.000420  [   50/ 9964]
+loss: 0.000449  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.972%, Avg loss: 0.000807
+Accuracy per marker: 6313 (99.889%)
+Accuracy per frame:  0.992 (784 / 790)
+Epoch 17
+-------------------------------
+loss: 0.000588  [   50/ 9964]
+loss: 0.000296  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.976%, Avg loss: 0.000948
+Accuracy per marker: 6314 (99.905%)
+Accuracy per frame:  0.994 (785 / 790)
+Epoch 18
+-------------------------------
+loss: 0.000613  [   50/ 9964]
+loss: 0.000410  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.972%, Avg loss: 0.000937
+Accuracy per marker: 6313 (99.889%)
+Accuracy per frame:  0.992 (784 / 790)
+Epoch 19
+-------------------------------
+loss: 0.001537  [   50/ 9964]
+loss: 0.000399  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.980%, Avg loss: 0.000985
+Accuracy per marker: 6315 (99.921%)
+Accuracy per frame:  0.995 (786 / 790)
+Epoch 20
+-------------------------------
+loss: 0.000610  [   50/ 9964]
+loss: 0.000226  [ 5050/ 9964]
+Test Error: 
+Accuracy per entry: 99.976%, Avg loss: 0.001082
+Accuracy per marker: 6314 (99.905%)
+Accuracy per frame:  0.994 (785 / 790)
+Done!

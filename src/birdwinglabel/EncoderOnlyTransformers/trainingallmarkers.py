@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch import nn
 from pathlib import Path
+import random
 
 from birdwinglabel.dataprocessing import data
 from birdwinglabel.dataprocessing.data import full_bilateral_markers
@@ -20,7 +21,9 @@ labelled_df = pd.read_pickle(pkl_path)
 # rename to fit in createtorchdataset
 labelled_df.rename(columns={labelled_df.columns[1]: 'markers_matrix', labelled_df.columns[2]: 'label'}, inplace=True)
 
+
 # sanity check
+# print(f'labelled_df.iloc[1,1]: \n{labelled_df.iloc[1,1]} \n{type(labelled_df.iloc[1,1])} \n{labelled_df.iloc[1,2]}')
 # print(f'1 Nones in df: {labelled_df.isnull().sum().sum()}')
 # print(f'sampled matrix: {labelled_df.iloc[2,1]} \ntype of matrix: {type(labelled_df.iloc[2,1])}')
 
@@ -68,10 +71,15 @@ def get_frameID(idx):
     return frameIDs
 
 # choose sets by index in seqID
-train_idx = range(0,200)
-test_idx = range(200,250)
+random.seed(1)
+seqID_subset_idx = random.sample(range(len(seqID_list)), 250)
+train_idx = seqID_subset_idx[0:200]
+test_idx = seqID_subset_idx[200:250]
+# print(f'train idx: {train_idx} \ntest_idx: {test_idx}')
+# input()
 train_set = data.subset_by_frameID(labelled_df, get_frameID(train_idx))
 test_set = data.subset_by_frameID(labelled_df, get_frameID(test_idx))
+
 
 # print(f'train set sample: \n{train_set.iloc[2,1]} \nlabel: {train_set.iloc[2,2]}'
 #       f' \n type: \n{type(train_set.iloc[2,1])}')
@@ -110,10 +118,10 @@ test_set = prepforML.permute_df(test_set)
 # moved to common
 
 for i in range(1,3):
-    train_set.iloc[:,i] = train_set.iloc[:,i].apply(prepforML.padding)
-    test_set.iloc[:, i] = test_set.iloc[:, i].apply(prepforML.padding)
+    train_set.iloc[:,i] = train_set.iloc[:,i].apply(lambda x: prepforML.padding(x)[0])
+    test_set.iloc[:, i] = test_set.iloc[:, i].apply(lambda x: prepforML.padding(x)[0])
 
-# print(f'train set sample: \n{train_set.iloc[2,1]} \n{train_set.iloc[2,2]}')
+print(f'train set sample: \n{train_set.iloc[2,1]} \n{train_set.iloc[2,2]}')
 
 
 
@@ -141,9 +149,9 @@ batch_size = 50
 train_dataloader = DataLoader(train_Dataset, batch_size=batch_size)
 test_dataloader = DataLoader(test_Dataset, batch_size=batch_size)
 
-# traning the model
+# training the model
 model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
 
 loss = nn.BCEWithLogitsLoss()
-optim = torch.optim.Adam(model.parameters())
-trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=8)
+optim = torch.optim.AdamW(model.parameters())
+trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=3)

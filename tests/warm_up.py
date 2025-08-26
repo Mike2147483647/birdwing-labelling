@@ -1,16 +1,33 @@
 import birdwinglabel.dataprocessing.data as birdData
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d.art3d import Line3D
+from pathlib import Path
 
 
+# find metadata
+path_to_data = Path(__file__).parent.parent / "src" / "birdwinglabel" / "data"
+labelled_df = pd.read_csv(path_to_data / "2024-03-24-FullBilateralMarkers.csv")
+unlabelled_df = pd.read_csv(path_to_data / "2025-06-23-FullNoLabels.csv" )
+print(f'''
+    no of seq in labelled_df: {len(list(set(labelled_df['seqID'])))}
+    no of frames in labelled_df: {len(list(set(labelled_df['frameID'])))}
+    no of seq in unlabelled_df: {len(list(set(unlabelled_df['seqID'])))}
+    no of frames in unlabelled_df: {len(list(set(unlabelled_df['frameID'])))}
+    length of labelled_df: {len(labelled_df)}
+    length of unlabelled_df: {len(unlabelled_df)}
+''')
+input()
 
 # get list of unique seqID of full_bilateral_markers
 full_bilateral_seqID = birdData.full_bilateral_markers['seqID'].to_list()
 full_bilateral_seqID = list(set(full_bilateral_seqID))
 # print(full_bilateral_seqID)    # has length 1635
 
+
+input()
 # find subset of first seqID
 flight_id = birdData.full_bilateral_markers['seqID'][0]
 print(flight_id)

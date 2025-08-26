@@ -4,6 +4,7 @@ import birdwinglabel.dataprocessing
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib.widgets import Button
 from mpl_toolkits.mplot3d.art3d import Line3D
 from pathlib import Path
 
@@ -16,6 +17,7 @@ def plot_sequence(labelled_df):
     edges = [(1,3),(1,5),(3,5),
              (2,4),(2,6),(4,6),
              (7,8)]
+
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -31,16 +33,13 @@ def plot_sequence(labelled_df):
     for line in lines:
         ax.add_line(line)
 
-    # Prepare lines from origin to each marker (max 8)
-    origin_lines = [Line3D([], [], [], lw=1, color='gray', linestyle='dashed') for _ in range(3,9)]
-    for line in origin_lines:
-        ax.add_line(line)
-
     # Add scatter for markers 1-8
-    marker_scatter = ax.scatter([], [], [], color='blue', s=30, label='Markers 1-8')
+    marker_scatter = ax.scatter([], [], [], color='blue', s=30, label='Markers 1-8', alpha=1.0)
 
     # Add scatter for non markers
-    zero_scatter = ax.scatter([], [], [], color='green', s=30, label='Label 0')
+    zero_scatter = ax.scatter([], [], [], color='green', s=30, label='Label 0', alpha=1.0)
+
+    paused = [False]
 
     def init():
         for line in lines:
@@ -49,7 +48,10 @@ def plot_sequence(labelled_df):
         marker_scatter._offsets3d = ([], [], [])
         return lines + [marker_scatter]
 
+
     def update(frame):
+        if paused[0]:
+            return lines + [marker_scatter, zero_scatter]
         coords = np.asarray(labelled_df.iloc[frame, 1])
         labels = np.asarray(labelled_df.iloc[frame, 2])
         label_to_idx = {label: idx for idx, label in enumerate(labels)}
@@ -64,24 +66,33 @@ def plot_sequence(labelled_df):
             else:
                 lines[i].set_data([], [])
                 lines[i].set_3d_properties([])
-            # Markers 1-8 (blue)
-            mask = np.isin(labels, np.arange(1, 9))
-            marker_coords = coords[mask]
-            if marker_coords.shape[0] > 0:
-                marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
-            else:
-                marker_scatter._offsets3d = ([], [], [])
-            # Markers labeled 0 (green)
-            zero_mask = labels == 0
-            zero_coords = coords[zero_mask]
-            if zero_coords.shape[0] > 0:
-                zero_scatter._offsets3d = (zero_coords[:, 0], zero_coords[:, 1], zero_coords[:, 2])
-            else:
-                zero_scatter._offsets3d = ([], [], [])
-            return lines + [marker_scatter, zero_scatter]
+        # Markers 1-8 (blue)
+        mask = np.isin(labels, np.arange(1, 9))
+        marker_coords = coords[mask]
+        if marker_coords.shape[0] > 0:
+            marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
+        else:
+            marker_scatter._offsets3d = ([], [], [])
+        # Markers labeled 0 (green)
+        zero_mask = labels == 0
+        zero_coords = coords[zero_mask]
+        if zero_coords.shape[0] > 0:
+            zero_scatter._offsets3d = (zero_coords[:, 0], zero_coords[:, 1], zero_coords[:, 2])
+        else:
+            zero_scatter._offsets3d = ([], [], [])
+        return lines + [marker_scatter, zero_scatter]
+
+    def toggle_pause(event):
+        paused[0] = not paused[0]
 
     ani = FuncAnimation(fig, update, frames=len(labelled_df), init_func=init,
-                        blit=False, interval=100)
+                        blit=False, interval=500)
+
+    # Add pause button
+    axpause = plt.axes([0.8, 0.01, 0.1, 0.05])
+    bpause = Button(axpause, 'Pause/Resume')
+    bpause.on_clicked(toggle_pause)
+
     plt.show()
 
 
