@@ -196,7 +196,7 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
         self.num_head = num_head
         self.coord_dim = coord_dim
         self.tgt_marker = tgt_marker
-
+        self.src_marker = src_marker
         self.flatten = nn.Flatten(start_dim=1)
         self.src_in_embed_layer = BirdEmbedding(num_marker=src_marker, in_dim=coord_dim, out_dim=embed_dim)
         self.tgt_in_embed_layer = BirdEmbedding(num_marker=tgt_marker, in_dim=coord_dim, out_dim=embed_dim)
@@ -210,7 +210,7 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
                                           batch_first=True)
 
 
-    def forward(self, src: torch.Tensor, tgt: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor):
+    def forward(self, src: torch.Tensor, tgt: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor = None):
         '''
         :param src: dim: [batch, max_marker, 3]
         :param tgt: dim: [batch, 8, 3]
@@ -221,9 +221,12 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
 
         src_embedded = self.src_in_embed_layer(src)     # [batch, max_marker, embed_dim]
         tgt_embedded = self.tgt_in_embed_layer(tgt)     # [batch, 8, embed_dim]
-        src_mask_expanded = src_mask.unsqueeze(2).expand(-1, -1, src_mask.shape[1]).repeat_interleave(self.num_head, dim=0)
-        tgt_mask_expanded = tgt_mask.unsqueeze(2).expand(-1, -1, tgt_mask.shape[1]).repeat_interleave(self.num_head, dim=0)
-        output = self.transformer(src=src_embedded, src_mask=src_mask_expanded, tgt=tgt_embedded)
+        output = self.transformer(
+            src=src_embedded,
+            tgt=tgt_embedded,
+            src_key_padding_mask=src_mask,  # invert mask: True for padding
+            tgt_key_padding_mask=tgt_mask if tgt_mask is not None else None
+        )
         # [batch, 8, embed_dim]
         output = self.out_embed_layer(output)        # [batch, 8, embed_dim]
         return output

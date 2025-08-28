@@ -1,0 +1,1208 @@
+Model architecture:
+ IdentifyMarkerTimeIndptTransformer(
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (src_in_embed_layer): BirdEmbedding(
+    (proj): Linear(in_features=96, out_features=1024, bias=True)
+    (flatten): Flatten(start_dim=1, end_dim=-1)
+  )
+  (tgt_in_embed_layer): BirdEmbedding(
+    (proj): Linear(in_features=24, out_features=256, bias=True)
+    (flatten): Flatten(start_dim=1, end_dim=-1)
+  )
+  (out_embed_layer): BirdEmbedding(
+    (proj): Linear(in_features=256, out_features=24, bias=True)
+    (flatten): Flatten(start_dim=1, end_dim=-1)
+  )
+  (transformer): Transformer(
+    (encoder): TransformerEncoder(
+      (layers): ModuleList(
+        (0-2): 3 x TransformerEncoderLayer(
+          (self_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=32, out_features=32, bias=True)
+          )
+          (linear1): Linear(in_features=32, out_features=128, bias=True)
+          (dropout): Dropout(p=0.1, inplace=False)
+          (linear2): Linear(in_features=128, out_features=32, bias=True)
+          (norm1): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+          (norm2): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+          (dropout1): Dropout(p=0.1, inplace=False)
+          (dropout2): Dropout(p=0.1, inplace=False)
+        )
+      )
+      (norm): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+    )
+    (decoder): TransformerDecoder(
+      (layers): ModuleList(
+        (0-2): 3 x TransformerDecoderLayer(
+          (self_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=32, out_features=32, bias=True)
+          )
+          (multihead_attn): MultiheadAttention(
+            (out_proj): NonDynamicallyQuantizableLinear(in_features=32, out_features=32, bias=True)
+          )
+          (linear1): Linear(in_features=32, out_features=128, bias=True)
+          (dropout): Dropout(p=0.1, inplace=False)
+          (linear2): Linear(in_features=128, out_features=32, bias=True)
+          (norm1): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+          (norm2): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+          (norm3): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+          (dropout1): Dropout(p=0.1, inplace=False)
+          (dropout2): Dropout(p=0.1, inplace=False)
+          (dropout3): Dropout(p=0.1, inplace=False)
+        )
+      )
+      (norm): LayerNorm((32,), eps=1e-05, elementwise_affine=True)
+    )
+  )
+)
+Epoch 1
+-------------------------------
+loss: 0.080439  [ 1900/18919] (10%)
+loss: 0.047123  [ 3790/18919] (20%)
+loss: 0.032804  [ 5680/18919] (30%)
+loss: 0.028479  [ 7570/18919] (40%)
+loss: 0.023885  [ 9460/18919] (50%)
+loss: 0.022737  [11350/18919] (59%)
+loss: 0.020794  [13240/18919] (69%)
+loss: 0.024771  [15130/18919] (79%)
+loss: 0.022287  [17020/18919] (89%)
+loss: 0.018289  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4722,  0.2762, -0.1809],
+        [ 0.5259,  0.1179, -0.0998],
+        [-0.3242,  0.1964, -0.2020],
+        [ 0.3887,  0.1187, -0.1368],
+        [-0.3656, -0.0053, -0.1212],
+        [ 0.3411, -0.0719, -0.0234],
+        [-0.1890, -0.1726, -0.0179],
+        [ 0.1664, -0.1912, -0.0137]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.1445, 0.0926, 0.0966, 0.0818, 0.0559, 0.1618, 0.0613, 0.0991])
+
+    test loss avg over frame: 0.027032751590013504 
+    Proportion of frames that has <5% error: 0.000000
+    Proportion of frames that has <10% error: 0.000577
+    Proportion of frames that has <20% error: 0.378368
+    
+Epoch 2
+-------------------------------
+loss: 0.020652  [ 1900/18919] (10%)
+loss: 0.017888  [ 3790/18919] (20%)
+loss: 0.012967  [ 5680/18919] (30%)
+loss: 0.016125  [ 7570/18919] (40%)
+loss: 0.013227  [ 9460/18919] (50%)
+loss: 0.012586  [11350/18919] (59%)
+loss: 0.014869  [13240/18919] (69%)
+loss: 0.013174  [15130/18919] (79%)
+loss: 0.012051  [17020/18919] (89%)
+loss: 0.014146  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4272,  0.2189, -0.1576],
+        [ 0.4907,  0.0876, -0.0919],
+        [-0.3374,  0.1772, -0.1836],
+        [ 0.3835,  0.1021, -0.1482],
+        [-0.3516, -0.0230, -0.1118],
+        [ 0.3465, -0.0754, -0.0586],
+        [-0.1987, -0.1887, -0.0152],
+        [ 0.1806, -0.1906, -0.0082]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0285, 0.1095, 0.0322, 0.1019, 0.0189, 0.0989, 0.0195, 0.0726])
+
+    test loss avg over frame: 0.016114382073283195 
+    Proportion of frames that has <5% error: 0.000192
+    Proportion of frames that has <10% error: 0.139338
+    Proportion of frames that has <20% error: 0.649731
+    
+Epoch 3
+-------------------------------
+loss: 0.012187  [ 1900/18919] (10%)
+loss: 0.012703  [ 3790/18919] (20%)
+loss: 0.012592  [ 5680/18919] (30%)
+loss: 0.014272  [ 7570/18919] (40%)
+loss: 0.014632  [ 9460/18919] (50%)
+loss: 0.017324  [11350/18919] (59%)
+loss: 0.008510  [13240/18919] (69%)
+loss: 0.010504  [15130/18919] (79%)
+loss: 0.008289  [17020/18919] (89%)
+loss: 0.013816  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4477,  0.2163, -0.1569],
+        [ 0.4723,  0.0983, -0.0811],
+        [-0.3383,  0.1763, -0.1756],
+        [ 0.3583,  0.1102, -0.1185],
+        [-0.3598, -0.0228, -0.1061],
+        [ 0.3173, -0.0698, -0.0680],
+        [-0.1988, -0.1800, -0.0200],
+        [ 0.1728, -0.1999, -0.0261]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0189, 0.0961, 0.0347, 0.0965, 0.0271, 0.1218, 0.0217, 0.1062])
+
+    test loss avg over frame: 0.014273949898779392 
+    Proportion of frames that has <5% error: 0.001732
+    Proportion of frames that has <10% error: 0.130293
+    Proportion of frames that has <20% error: 0.688992
+    
+Epoch 4
+-------------------------------
+loss: 0.009905  [ 1900/18919] (10%)
+loss: 0.009009  [ 3790/18919] (20%)
+loss: 0.009390  [ 5680/18919] (30%)
+loss: 0.008023  [ 7570/18919] (40%)
+loss: 0.011994  [ 9460/18919] (50%)
+loss: 0.012127  [11350/18919] (59%)
+loss: 0.010565  [13240/18919] (69%)
+loss: 0.008778  [15130/18919] (79%)
+loss: 0.008249  [17020/18919] (89%)
+loss: 0.011241  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4357,  0.2215, -0.1471],
+        [ 0.4928,  0.1189, -0.0494],
+        [-0.3226,  0.1639, -0.1751],
+        [ 0.3852,  0.1001, -0.1120],
+        [-0.3500, -0.0138, -0.1049],
+        [ 0.3376, -0.0837, -0.0435],
+        [-0.1903, -0.1880, -0.0283],
+        [ 0.1632, -0.2100, -0.0159]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0148, 0.1018, 0.0429, 0.1352, 0.0161, 0.1444, 0.0456, 0.1573])
+
+    test loss avg over frame: 0.013371032662689686 
+    Proportion of frames that has <5% error: 0.001732
+    Proportion of frames that has <10% error: 0.182448
+    Proportion of frames that has <20% error: 0.743841
+    
+Epoch 5
+-------------------------------
+loss: 0.009464  [ 1900/18919] (10%)
+loss: 0.007027  [ 3790/18919] (20%)
+loss: 0.007791  [ 5680/18919] (30%)
+loss: 0.009007  [ 7570/18919] (40%)
+loss: 0.012659  [ 9460/18919] (50%)
+loss: 0.007307  [11350/18919] (59%)
+loss: 0.006102  [13240/18919] (69%)
+loss: 0.008045  [15130/18919] (79%)
+loss: 0.009129  [17020/18919] (89%)
+loss: 0.007735  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4436,  0.2189, -0.1593],
+        [ 0.4849,  0.0967, -0.1159],
+        [-0.3412,  0.1724, -0.1889],
+        [ 0.3760,  0.1020, -0.1526],
+        [-0.3592, -0.0127, -0.1168],
+        [ 0.3304, -0.0728, -0.0815],
+        [-0.2049, -0.1829, -0.0212],
+        [ 0.1740, -0.1983, -0.0275]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0182, 0.1000, 0.0256, 0.0958, 0.0284, 0.1037, 0.0249, 0.1000])
+
+    test loss avg over frame: 0.01264944951981306 
+    Proportion of frames that has <5% error: 0.012317
+    Proportion of frames that has <10% error: 0.217667
+    Proportion of frames that has <20% error: 0.778291
+    
+Epoch 6
+-------------------------------
+loss: 0.008991  [ 1900/18919] (10%)
+loss: 0.007921  [ 3790/18919] (20%)
+loss: 0.010605  [ 5680/18919] (30%)
+loss: 0.007308  [ 7570/18919] (40%)
+loss: 0.008219  [ 9460/18919] (50%)
+loss: 0.007935  [11350/18919] (59%)
+loss: 0.006690  [13240/18919] (69%)
+loss: 0.009017  [15130/18919] (79%)
+loss: 0.007666  [17020/18919] (89%)
+loss: 0.007477  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4415,  0.2158, -0.1528],
+        [ 0.4911,  0.1138, -0.0856],
+        [-0.3302,  0.1686, -0.1830],
+        [ 0.3764,  0.1166, -0.1379],
+        [-0.3552, -0.0193, -0.1133],
+        [ 0.3387, -0.0651, -0.0599],
+        [-0.1946, -0.1859, -0.0229],
+        [ 0.1793, -0.1928, -0.0184]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0047, 0.0619, 0.0234, 0.0659, 0.0144, 0.0799, 0.0200, 0.0673])
+
+    test loss avg over frame: 0.011995585635304451 
+    Proportion of frames that has <5% error: 0.014819
+    Proportion of frames that has <10% error: 0.221324
+    Proportion of frames that has <20% error: 0.752887
+    
+Epoch 7
+-------------------------------
+loss: 0.007035  [ 1900/18919] (10%)
+loss: 0.007692  [ 3790/18919] (20%)
+loss: 0.008074  [ 5680/18919] (30%)
+loss: 0.006790  [ 7570/18919] (40%)
+loss: 0.006592  [ 9460/18919] (50%)
+loss: 0.008043  [11350/18919] (59%)
+loss: 0.007338  [13240/18919] (69%)
+loss: 0.007414  [15130/18919] (79%)
+loss: 0.007229  [17020/18919] (89%)
+loss: 0.004678  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4420,  0.2125, -0.1547],
+        [ 0.4918,  0.0937, -0.0691],
+        [-0.3349,  0.1673, -0.1865],
+        [ 0.3834,  0.1046, -0.1320],
+        [-0.3523, -0.0179, -0.1080],
+        [ 0.3219, -0.0784, -0.0461],
+        [-0.1984, -0.1827, -0.0183],
+        [ 0.1664, -0.1990, -0.0118]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0113, 0.1101, 0.0150, 0.1019, 0.0057, 0.1486, 0.0130, 0.1199])
+
+    test loss avg over frame: 0.011536606587469578 
+    Proportion of frames that has <5% error: 0.009238
+    Proportion of frames that has <10% error: 0.236336
+    Proportion of frames that has <20% error: 0.805812
+    
+Epoch 8
+-------------------------------
+loss: 0.007379  [ 1900/18919] (10%)
+loss: 0.007049  [ 3790/18919] (20%)
+loss: 0.009698  [ 5680/18919] (30%)
+loss: 0.006248  [ 7570/18919] (40%)
+loss: 0.005856  [ 9460/18919] (50%)
+loss: 0.008625  [11350/18919] (59%)
+loss: 0.007452  [13240/18919] (69%)
+loss: 0.006870  [15130/18919] (79%)
+loss: 0.005911  [17020/18919] (89%)
+loss: 0.006082  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4402,  0.2120, -0.1507],
+        [ 0.4830,  0.0843, -0.0735],
+        [-0.3324,  0.1617, -0.1799],
+        [ 0.3642,  0.0978, -0.1329],
+        [-0.3459, -0.0152, -0.1102],
+        [ 0.3347, -0.0656, -0.0608],
+        [-0.1990, -0.1857, -0.0170],
+        [ 0.1661, -0.1992, -0.0176]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0089, 0.1229, 0.0175, 0.1042, 0.0192, 0.0855, 0.0099, 0.1174])
+
+    test loss avg over frame: 0.011639395728707314 
+    Proportion of frames that has <5% error: 0.005581
+    Proportion of frames that has <10% error: 0.222479
+    Proportion of frames that has <20% error: 0.793303
+    
+Epoch 9
+-------------------------------
+loss: 0.008266  [ 1900/18919] (10%)
+loss: 0.006602  [ 3790/18919] (20%)
+loss: 0.009097  [ 5680/18919] (30%)
+loss: 0.006785  [ 7570/18919] (40%)
+loss: 0.006368  [ 9460/18919] (50%)
+loss: 0.006257  [11350/18919] (59%)
+loss: 0.007820  [13240/18919] (69%)
+loss: 0.007729  [15130/18919] (79%)
+loss: 0.007475  [17020/18919] (89%)
+loss: 0.006173  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4403,  0.2158, -0.1509],
+        [ 0.4844,  0.0802, -0.0659],
+        [-0.3338,  0.1648, -0.1827],
+        [ 0.3755,  0.1002, -0.1183],
+        [-0.3502, -0.0133, -0.1087],
+        [ 0.3329, -0.0709, -0.0539],
+        [-0.1933, -0.1792, -0.0220],
+        [ 0.1772, -0.2010, -0.0103]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0015, 0.1357, 0.0119, 0.1184, 0.0114, 0.1073, 0.0334, 0.1057])
+
+    test loss avg over frame: 0.011836683377623558 
+    Proportion of frames that has <5% error: 0.009238
+    Proportion of frames that has <10% error: 0.231139
+    Proportion of frames that has <20% error: 0.803695
+    
+Epoch 10
+-------------------------------
+loss: 0.005318  [ 1900/18919] (10%)
+loss: 0.005421  [ 3790/18919] (20%)
+loss: 0.005710  [ 5680/18919] (30%)
+loss: 0.005848  [ 7570/18919] (40%)
+loss: 0.005795  [ 9460/18919] (50%)
+loss: 0.005164  [11350/18919] (59%)
+loss: 0.009586  [13240/18919] (69%)
+loss: 0.006504  [15130/18919] (79%)
+loss: 0.005289  [17020/18919] (89%)
+loss: 0.007433  [18910/18919] (99%)
+src sample: tensor([[ 4.8606e-01,  1.4384e-01, -9.5059e-02],
+        [-6.5071e-03,  1.4583e-01, -1.1170e-01],
+        [ 1.8697e-01, -1.7729e-01, -1.9794e-02],
+        [-1.3069e-02,  1.1437e-01, -7.9256e-02],
+        [-5.5435e-03,  1.4674e-01, -9.7178e-02],
+        [-3.5282e-01, -1.6492e-02, -1.0944e-01],
+        [ 3.5216e-01, -4.3293e-02, -7.3415e-02],
+        [ 1.5218e-03,  1.2337e-01, -7.2364e-02],
+        [-4.3997e-01,  2.1653e-01, -1.5102e-01],
+        [ 9.0667e-04,  1.4674e-01, -9.8265e-02],
+        [-3.3872e-01,  1.6381e-01, -1.8301e-01],
+        [ 9.8471e-03,  1.4980e-01, -1.0908e-01],
+        [ 2.0988e-02,  1.1614e-01, -7.5513e-02],
+        [-1.9903e-01, -1.8590e-01, -1.9681e-02],
+        [ 3.6318e-01,  1.3913e-01, -1.4580e-01],
+        [-3.3787e-01,  1.4901e+00, -1.0282e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
+        [ 0.0000e+00,  0.0000e+00,  0.0000e+00]]) 
+src_mask sample: tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True],
+        [False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False,  True,  True,  True,  True,  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True]]) 
+tgt sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [-0.3528, -0.0165, -0.1094],
+        [-0.1990, -0.1859, -0.0197],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000],
+        [ 0.0000,  0.0000,  0.0000]])
+pred sample: tensor([[-0.4393,  0.2113, -0.1527],
+        [ 0.4860,  0.0974, -0.0749],
+        [-0.3323,  0.1643, -0.1834],
+        [ 0.3687,  0.1064, -0.1315],
+        [-0.3520, -0.0172, -0.1096],
+        [ 0.3280, -0.0627, -0.0573],
+        [-0.1932, -0.1905, -0.0195],
+        [ 0.1716, -0.2038, -0.0127]]) 
+gold sample: tensor([[-0.4400,  0.2165, -0.1510],
+        [ 0.4861,  0.1438, -0.0951],
+        [-0.3387,  0.1638, -0.1830],
+        [ 0.3632,  0.1391, -0.1458],
+        [-0.3528, -0.0165, -0.1094],
+        [ 0.3522, -0.0433, -0.0734],
+        [-0.1990, -0.1859, -0.0197],
+        [ 0.1870, -0.1773, -0.0198]]) 
+relative error: tensor([0.0108, 0.0982, 0.0153, 0.0870, 0.0031, 0.0964, 0.0274, 0.1217])
+
+    test loss avg over frame: 0.011841760016977787 
+    Proportion of frames that has <5% error: 0.015974
+    Proportion of frames that has <10% error: 0.226713
+    Proportion of frames that has <20% error: 0.802348
+    
+Done!

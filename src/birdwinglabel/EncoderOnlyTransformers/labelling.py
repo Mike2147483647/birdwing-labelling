@@ -11,77 +11,80 @@ from birdwinglabel.common import prepforML
 from birdwinglabel.EncoderOnlyTransformers.basic import IndptLabellingTransformer
 
 
-# get data
-data_dir = Path(__file__).parent.parent / 'dataprocessing'
-working_df = pd.read_pickle(data_dir / 'src_df.pkl')
-print(f'''working_df sample:
-    {working_df.iloc[1,0]}
-    {working_df.iloc[1,1]}
-    {working_df.iloc[1,2]}
-    {working_df.iloc[1,3]}
-''' )
 
-# subset the sequence to label
-labelling_seq_df = data.subset_by_seqID(working_df, [working_df.iloc[48,3]])
-labelling_seq_df = prepforML.permute_df(labelling_seq_df)
-labelling_seq_df.iloc[:,1] = labelling_seq_df.iloc[:,1].apply(lambda x: prepforML.padding(x,32)[0])
-print(f'labelling_seq_df sample: {labelling_seq_df.iloc[2]} \n{labelling_seq_df.iloc[2,1]} ')
+def enc_labelling(raw_df, model:IndptLabellingTransformer, model_param_path):
+    '''
+    raw_df: pd.DataFrame with col 'frameID', 'rot_xyz'
+        'rot_xyz' entries are matrices of [num_marker, 3]
+    model: IndptLabellingTransformer
+    model_param_path: path to .pth where the trained params are stored
+    max_length: int, pad length
+    '''
+    max_length = model.seq_len
 
-labelling_seq_tensor = torch.tensor(labelling_seq_df.iloc[:,1], dtype=torch.float32)
+    # Permute 'rot_xyz' column
+    df = raw_df.copy()
+    df = prepforML.permute_df(df)
 
-# set up the transformer
-model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
+    # Pad 'rot_xyz' to max_length
+    df['rot_xyz'] = df['rot_xyz'].apply(lambda x: prepforML.padding(x, max_length)[0])
 
-model.load_state_dict(torch.load('ET_32m_more_data_weights.pth', map_location='cuda'))
-model.eval()
+    # Convert to tensor
+    rot_xyz_tensor = torch.tensor(np.stack(df['rot_xyz'].values), dtype=torch.float32)
 
-# pass unlabelled data to transformer
-pred_label_tensor = model.forward(labelling_seq_tensor)
-# pred_label_tensor has dim [num_of_frames, 32, 9] where each row is in terms of logits (-inf,inf)
-# pred_label_tensor = (torch.sigmoid(pred_label_tensor) > 0.5).float()
-pred_label_matrix = pred_label_tensor.argmax(dim=2)
-# pred_label_matrix has dim [num_of_frames, 32]
+    # Load model parameters
+    model.load_state_dict(torch.load(model_param_path, map_location='cuda'))
+    model.eval()
+
+    # Forward pass
+    with torch.no_grad():
+        pred_label_tensor = model(rot_xyz_tensor)
+    pred_label_matrix = pred_label_tensor.argmax(dim=2)
+
+    # Build labelled DataFrame
+    labelled_df = pd.DataFrame({
+        'frameID': df['frameID'],
+        'rot_xyz': [arr.numpy() for arr in rot_xyz_tensor],
+        'labels': [arr.numpy() for arr in pred_label_matrix]
+    })
+
+    # Unpad rows using prepforML.unpad_row
+    labelled_df[['rot_xyz', 'labels']] = labelled_df.apply(
+        prepforML.unpad_row, axis=1, result_type='expand'
+    )
+
+    return labelled_df
+
+
+if __name__ == '__main__':
+    # get data
+    data_dir = Path(__file__).parent.parent / 'dataprocessing'
+    working_df = pd.read_pickle(data_dir / 'src_df.pkl')
+    seqID_list = data.get_list_of_seqID(working_df)
+    labelling_seq_df = data.subset_by_seqID(working_df, [seqID_list[48]])
+
+    model1 = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
+    model1_param_path = Path(__file__).parent / 'ET_32m_more_data_weights.pth'
+    out_seq_df = enc_labelling(labelling_seq_df, model1, model1_param_path)
+    print(f'''
+        out_seq_df ID: {out_seq_df.iloc[0, 0]}
+        out_seq_df rot_xyz: {out_seq_df.iloc[0, 1]}
+        out_seq_df label: {out_seq_df.iloc[0, 2]}
+    ''')
+
+    from birdwinglabel.visualisation.plot3d import plot_sequence
+    plot_sequence(out_seq_df)
 
 
 
-labelled_df = pd.DataFrame({
-    'frameID': labelling_seq_df['frameID'],
-    'rot_xyz': [arr.numpy() for arr in labelling_seq_tensor],  # Each entry is a [32,3] matrix
-    'labels': list(pred_label_matrix)   # Each entry is a [32] vector
-})
 
-def unpad_row_apply(row, pad_value=0):
-    rot_xyz = np.array(row['rot_xyz'])
-    labels = np.array(row['labels'])
-    mask = ~(np.all(rot_xyz == pad_value, axis=1))
-    return rot_xyz[mask], labels[mask]
 
-labelled_df[['rot_xyz', 'labels']] = labelled_df.apply(
-    unpad_row_apply, axis=1, result_type='expand'
-)
 
-print(f'frameID: {labelled_df.iloc[2,0]} \n coordinates:{labelled_df.iloc[2,1]}\n labels: {labelled_df.iloc[2,2]}\n'
-      f'unprocessed_frameID: {labelling_seq_df.iloc[2,0]} \nunprocessed_coords: {labelling_seq_df.iloc[2,1]} \nunprocessed_labels: {labelling_seq_df.iloc[2,2]}')
 
-def sort_by_label(row):
-    rot_xyz = np.array(row['rot_xyz'])
-    labels = np.array(row['labels'])
-    # Mask for labels 1-8
-    mask_1_8 = (labels >= 1) & (labels <= 8)
-    mask_0 = (labels == 0)
-    # Indices for 1-8 sorted
-    idx_1_8 = np.argsort(labels[mask_1_8])
-    # Indices for 0's (order doesn't matter)
-    idx_0 = np.arange(np.sum(mask_0))
-    # Concatenate indices
-    sorted_rot_xyz = np.concatenate([rot_xyz[mask_1_8][idx_1_8], rot_xyz[mask_0][idx_0]])
-    sorted_labels = np.concatenate([labels[mask_1_8][idx_1_8], labels[mask_0][idx_0]])
-    return sorted_rot_xyz, sorted_labels
 
-# labelled_df[['rot_xyz', 'labels']] = labelled_df.apply(
-#     sort_by_label, axis=1, result_type='expand'
-# )
 
-# output as file
-labelled_df.to_pickle('Transformer_labelled_df.pkl')
+
+
+
+
 

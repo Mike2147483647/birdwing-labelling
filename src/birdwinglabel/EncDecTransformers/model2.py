@@ -24,9 +24,12 @@ tgt_df = pd.read_pickle(df_dir / "tgt_df.pkl")
 # subset to train_src, train_tgt, test_src
 seqID = data.get_list_of_seqID(src_df)
 random.seed(1)
-sample_idx = random.sample( range(len(seqID)), 450 )
-train_seqs = [seqID[i] for i in sample_idx[0:400]]    # choose here
-test_seqs = [seqID[i] for i in sample_idx[400:450]]
+sample_idx = random.sample( range(len(seqID)), 250 )
+train_seqs = [seqID[i] for i in sample_idx[0:200]]    # choose here
+test_seqs = [seqID[i] for i in sample_idx[200:250]]
+
+print(f'train_seqs: {train_seqs} \n{sample_idx[0:200]} \ntest_seqs: {test_seqs} \n{sample_idx[200:250]}')
+
 
 train_src = data.subset_by_seqID(src_df, train_seqs)
 test_src = data.subset_by_seqID(src_df, test_seqs)
@@ -56,8 +59,8 @@ print(f'train_mask: {train_src.iloc[0,4]}')
 
 # put into dataset, then dataloader
 
-train_dataset = MarkerTimeIndptDataset(src_df=train_src, tgt_df=train_tgt, noise=True)
-test_dataset = MarkerTimeIndptDataset(src_df=test_src, tgt_df=test_tgt, noise=True)
+train_dataset = MarkerTimeIndptDataset(src_df=train_src, tgt_df=train_tgt, noise=False)
+test_dataset = MarkerTimeIndptDataset(src_df=test_src, tgt_df=test_tgt, noise=False)
 
 train_dataloader = DataLoader(train_dataset, batch_size=10, shuffle=True)
 test_dataloader = DataLoader(test_dataset, batch_size=10)
@@ -77,7 +80,7 @@ test_dataloader = DataLoader(test_dataset, batch_size=10)
 model = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128)
 loss = nn.L1Loss()
 optim = torch.optim.AdamW(model.parameters())
-trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=50)
+trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=10)
 
 
 

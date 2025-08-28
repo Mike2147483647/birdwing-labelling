@@ -44,7 +44,7 @@ class HotMarkerDataset(Dataset):
 
 # Autoencoders
 class MarkerTimeIndptDataset(Dataset):
-    def __init__(self, src_df, tgt_df, noise:bool):
+    def __init__(self, src_df, tgt_df, noise:bool, pred:bool = False):
         '''
         src_df: [num_frames, max_marker, 3]
         tgt_df: [num_frames, 8, 3]
@@ -56,14 +56,20 @@ class MarkerTimeIndptDataset(Dataset):
         self.gold_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in tgt_df['rot_xyz']])
         tgt_df_copy = tgt_df
         tgt_df_copy.loc[:, 'rot_xyz'] = tgt_df_copy['rot_xyz'].apply(simmissing_marker)
+        tgt_df_copy = permute_df(tgt_df_copy)
         tgt_df_copy.loc[:, ['rot_xyz', 'rot_xyz_mask']] = tgt_df_copy['rot_xyz'].apply(
             lambda x: pd.Series(padding(x, 8), index=['rot_xyz', 'rot_xyz_mask']))
-        tgt_df_copy = permute_df(tgt_df_copy)
         self.tgt_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in tgt_df_copy['rot_xyz']])
         self.tgt_mask = torch.stack([torch.tensor(x, dtype=torch.bool) for x in tgt_df_copy['rot_xyz_mask']])
         if noise:
             noise_add = torch.ones_like(self.tgt_df)
             self.tgt_df = self.tgt_df + noise_add * self.tgt_mask.unsqueeze(-1)
+        if pred:
+            tgt_df.loc[:, ['rot_xyz', 'rot_xyz_mask']] = tgt_df['rot_xyz'].apply(
+                lambda x: pd.Series(padding(x, 8), index=['rot_xyz', 'rot_xyz_mask']))
+            self.tgt_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in tgt_df['rot_xyz']])
+            self.tgt_mask = torch.stack([torch.tensor(x, dtype=torch.bool) for x in tgt_df['rot_xyz_mask']])
+
 
     def __len__(self):
         return len(self.tgt_df)

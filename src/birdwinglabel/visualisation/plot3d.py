@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 # plot a whole sequence
-def plot_sequence(labelled_df):
+def plot_sequence(labelled_df, interval_len:int = 500):
     # Define edges between labels 1-8 (example: [(1,2), (2,3), ...])
     edges = [(1,3),(1,5),(3,5),
              (2,4),(2,6),(4,6),
@@ -86,7 +86,7 @@ def plot_sequence(labelled_df):
         paused[0] = not paused[0]
 
     ani = FuncAnimation(fig, update, frames=len(labelled_df), init_func=init,
-                        blit=False, interval=500)
+                        blit=False, interval= interval_len)
 
     # Add pause button
     axpause = plt.axes([0.8, 0.01, 0.1, 0.05])

@@ -131,7 +131,7 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
                 train_loop_aut_seq(train_dataloader, model, loss_fn, optimizer)
                 test_loop_aut_seq(test_dataloader, model, loss_fn)
             elif isinstance(model, IdentifyMarkerTimeIndptTransformer):
-                train_loop_aut(train_dataloader, model, loss_fn, optimizer, epochs)
+                train_loop_aut(train_dataloader, model, loss_fn, optimizer, t+1, epochs)
                 test_loop_aut(test_dataloader, model, loss_fn)
             else:
                 train_loop(train_dataloader, model, loss_fn, optimizer)
@@ -246,11 +246,13 @@ def test_loop_aut_seq(dataloader, model: IdentifyMarkerTimeDptTransformer, loss_
     ''')
     # input(f'press Enter to move onto next epoch: ')
 
-def train_loop_aut(dataloader, model, loss_fn, optimizer, epochs):
+def train_loop_aut(dataloader, model, loss_fn, optimizer, current_epoch, epochs):
     size = len(dataloader.dataset)
     # Set the model to training mode - important for batch normalization and dropout layer
     model.train()
     update_interval = max(1, size // 10)
+
+    all_diffs = []
 
     for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(dataloader):
         # Compute prediction and loss
@@ -262,11 +264,22 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer, epochs):
         optimizer.step()
         optimizer.zero_grad()
 
+        # sample variance of each entry in training set
+        if current_epoch == epochs:
+            diff = pred - gold  # [batch, 8, 3]
+            all_diffs.append(diff.detach().cpu())
+
         # visualisation of progress
         current = batch * src.shape[0] + len(src)
         if current % update_interval < src.shape[0]:
             percent = int(100 * current / size)
             print(f"loss: {loss.item():>7f}  [{current:>5d}/{size:>5d}] ({percent}%)")
+
+    if current_epoch == epochs and all_diffs:
+        diffs_cat = torch.cat(all_diffs, dim=0)  # [total_samples, 8, 3]
+        variance = torch.var(diffs_cat, dim=0, unbiased=True)  # [8, 3]
+        np.save(f'{pathlib.Path(sys.argv[0]).stem}_sample_variance.npy', variance.numpy())
+
 
 
 
@@ -278,27 +291,29 @@ def test_loop_aut(dataloader, model, loss_fn):
     loss, within_5, within_10, within_20 = 0, 0, 0, 0
     # print(f'check test dataloader iter {next(iter(dataloader))}')
 
-    for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(dataloader):
-        batch_size = gold.shape[0]
-        pred = model(src, tgt, src_mask, tgt_mask)  # [batch, 8, 3]
-        loss += loss_fn(pred, gold) * batch_size    # loss_fn uses default 'mean' mode, so multiply by batch size to get sum
+    with torch.no_grad():
+        for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(dataloader):
+            batch_size = gold.shape[0]
+            pred = model(src, tgt, src_mask, tgt_mask)  # [batch, 8, 3]
+            loss += loss_fn(pred, gold) * batch_size    # loss_fn uses default 'mean' mode, so multiply by batch size to get sum
 
-        # Compute per-marker L2 norm
-        l2_error = torch.norm(pred - gold, p=2, dim=-1)  # [batch, 8]
-        gold_l2 = torch.norm(gold, p=2, dim=-1)
-        # .clamp(min=1e-8))  # avoid div by zero
-        rel_error = l2_error / gold_l2  # relative error [batch, 8]
+            # Compute per-marker L2 norm
+            l2_error = torch.norm(pred - gold, p=2, dim=-1)  # [batch, 8]
+            gold_l2 = torch.norm(gold, p=2, dim=-1)
+            # .clamp(min=1e-8))  # avoid div by zero
+            rel_error = l2_error / gold_l2  # relative error [batch, 8]
 
-        # debug
-        if batch == 1:
-            print(f'pred sample: {pred[2]} \ngold sample: {gold[2]} \nrelative error: {rel_error[2]}')
+            # debug
+            if batch == 1:
+                print(f'src sample: {src[0]} \nsrc_mask sample: {src_mask[0]} \ntgt sample: {tgt[0]}')
+                print(f'pred sample: {pred[0]} \ngold sample: {gold[0]} \nrelative error: {rel_error[0]}')
 
-        # Compute max relative error per frame (across all markers)
-        frame_max_error = rel_error.max(dim=-1).values  # [batch]
+            # Compute max relative error per frame (across all markers)
+            frame_max_error = rel_error.max(dim=-1).values  # [batch]
 
-        within_5 += (frame_max_error < 0.05).sum().item()
-        within_10 += (frame_max_error < 0.10).sum().item()
-        within_20 += (frame_max_error < 0.20).sum().item()
+            within_5 += (frame_max_error < 0.05).sum().item()
+            within_10 += (frame_max_error < 0.10).sum().item()
+            within_20 += (frame_max_error < 0.20).sum().item()
 
 
 
