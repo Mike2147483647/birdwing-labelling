@@ -16,7 +16,7 @@ src/birdwinglabel/data/*.npy
 
 
 # model params
-**/*.pth
-
+*.pth
+*.pkl
 # plots generted for report,etc
-**/*.pdf
+*.pdf
