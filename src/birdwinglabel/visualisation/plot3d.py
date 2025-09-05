@@ -12,7 +12,13 @@ from pathlib import Path
 
 
 # plot a whole sequence
-def plot_sequence(labelled_df, interval_len:int = 500):
+def plot_sequence(labelled_df, interval_len:int = 500, save_file_path = None):
+    '''
+    :param labelled_df:
+    :param interval_len: int, the larger the slower
+    :param save_file_path: string must be end with .mp4
+    :return:
+    '''
     # Define edges between labels 1-8 (example: [(1,2), (2,3), ...])
     edges = [(1,3),(1,5),(3,5),
              (2,4),(2,6),(4,6),
@@ -48,38 +54,53 @@ def plot_sequence(labelled_df, interval_len:int = 500):
         marker_scatter._offsets3d = ([], [], [])
         return lines + [marker_scatter]
 
+    last_marker_coords = [[], [], []]
 
     def update(frame):
-        if paused[0]:
-            return lines + [marker_scatter, zero_scatter]
-        coords = np.asarray(labelled_df.iloc[frame, 1])
-        labels = np.asarray(labelled_df.iloc[frame, 2])
-        label_to_idx = {label: idx for idx, label in enumerate(labels)}
-        for i, (start, end) in enumerate(edges):
-            if start in label_to_idx and end in label_to_idx:
-                s_idx, e_idx = label_to_idx[start], label_to_idx[end]
-                x = [coords[s_idx, 0], coords[e_idx, 0]]
-                y = [coords[s_idx, 1], coords[e_idx, 1]]
-                z = [coords[s_idx, 2], coords[e_idx, 2]]
-                lines[i].set_data(x, y)
-                lines[i].set_3d_properties(z)
+        if not paused[0]:
+            coords = np.asarray(labelled_df.iloc[frame, 1])
+            labels = np.asarray(labelled_df.iloc[frame, 2])
+            mask = np.isin(labels, np.arange(1, 9))
+            marker_coords = coords[mask]
+            if marker_coords.shape[0] > 0:
+                marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
+                last_marker_coords[0] = marker_coords[:, 0]
+                last_marker_coords[1] = marker_coords[:, 1]
+                last_marker_coords[2] = marker_coords[:, 2]
             else:
-                lines[i].set_data([], [])
-                lines[i].set_3d_properties([])
-        # Markers 1-8 (blue)
-        mask = np.isin(labels, np.arange(1, 9))
-        marker_coords = coords[mask]
-        if marker_coords.shape[0] > 0:
-            marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
+                marker_scatter._offsets3d = ([], [], [])
+                last_marker_coords[0] = []
+                last_marker_coords[1] = []
+                last_marker_coords[2] = []
+            coords = np.asarray(labelled_df.iloc[frame, 1])
+            labels = np.asarray(labelled_df.iloc[frame, 2])
+            label_to_idx = {label: idx for idx, label in enumerate(labels)}
+            for i, (start, end) in enumerate(edges):
+                if start in label_to_idx and end in label_to_idx:
+                    s_idx, e_idx = label_to_idx[start], label_to_idx[end]
+                    x = [coords[s_idx, 0], coords[e_idx, 0]]
+                    y = [coords[s_idx, 1], coords[e_idx, 1]]
+                    z = [coords[s_idx, 2], coords[e_idx, 2]]
+                    lines[i].set_data(x, y)
+                    lines[i].set_3d_properties(z)
+                else:
+                    lines[i].set_data([], [])
+                    lines[i].set_3d_properties([])
+            mask = np.isin(labels, np.arange(1, 9))
+            marker_coords = coords[mask]
+            if marker_coords.shape[0] > 0:
+                marker_scatter._offsets3d = (marker_coords[:, 0], marker_coords[:, 1], marker_coords[:, 2])
+            else:
+                marker_scatter._offsets3d = ([], [], [])
+            zero_mask = labels == 0
+            zero_coords = coords[zero_mask]
+            if zero_coords.shape[0] > 0:
+                zero_scatter._offsets3d = (zero_coords[:, 0], zero_coords[:, 1], zero_coords[:, 2])
+            else:
+                zero_scatter._offsets3d = ([], [], [])
+            return lines + [marker_scatter, zero_scatter]
         else:
-            marker_scatter._offsets3d = ([], [], [])
-        # Markers labeled 0 (green)
-        zero_mask = labels == 0
-        zero_coords = coords[zero_mask]
-        if zero_coords.shape[0] > 0:
-            zero_scatter._offsets3d = (zero_coords[:, 0], zero_coords[:, 1], zero_coords[:, 2])
-        else:
-            zero_scatter._offsets3d = ([], [], [])
+            marker_scatter._offsets3d = (last_marker_coords[0], last_marker_coords[1], last_marker_coords[2])
         return lines + [marker_scatter, zero_scatter]
 
     def toggle_pause(event):
@@ -87,6 +108,8 @@ def plot_sequence(labelled_df, interval_len:int = 500):
 
     ani = FuncAnimation(fig, update, frames=len(labelled_df), init_func=init,
                         blit=False, interval= interval_len)
+    if save_file_path is not None:
+        ani.save(save_file_path, writer='ffmpeg')
 
     # Add pause button
     axpause = plt.axes([0.8, 0.01, 0.1, 0.05])

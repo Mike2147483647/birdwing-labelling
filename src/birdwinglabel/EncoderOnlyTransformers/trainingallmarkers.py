@@ -154,4 +154,4 @@ model = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_la
 
 loss = nn.BCEWithLogitsLoss()
 optim = torch.optim.AdamW(model.parameters())
-trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=3)
+trainandtest.trainandtest(loss, optim, model, train_dataloader, test_dataloader, epochs=20)

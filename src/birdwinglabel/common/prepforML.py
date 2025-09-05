@@ -56,28 +56,35 @@ def simulate_missing(df, portion: float= 0.1, seed = 1):
 # simulate missing marker for *a* rot_xyz matrix only
 def simmissing_marker(coord_matrix, seed = 1):
     RNG = np.random.default_rng(seed=seed)
-    num_marker = coord_matrix.shape[0]
-    num_to_remain = RNG.integers(1, num_marker+1)
-    marker_to_remain = RNG.choice(num_marker, size=num_to_remain, replace=False)
-    coord_matrix = coord_matrix[marker_to_remain]
-    return coord_matrix
+    try:
+        num_marker = coord_matrix.shape[0]
+        num_to_remain = RNG.integers(1, num_marker+1)
+        marker_to_remain = RNG.choice(num_marker, size=num_to_remain, replace=False)
+        coord_matrix = coord_matrix[marker_to_remain]
+        return coord_matrix
+    except Exception as e:
+        return np.zeros((1, 3))
 
 # randomize the rows of coords matrix and labels of each data point
 def permute(data_point, seed = 1):
     # col1 must be list of matrices, col2 must be list of labels
     RNG = np.random.default_rng(seed=seed)
-    if len(data_point) == 2:
-        # Two columns: permute the second column only
-        num_of_rows = data_point.iloc[1].shape[0]
-        perm = RNG.permutation(num_of_rows)
-        data_point.iloc[1] = data_point.iloc[1][perm]
-    elif len(data_point) >= 3:
-        # Three columns: permute both second and third columns
-        num_of_rows = data_point.iloc[1].shape[0]
-        perm = RNG.permutation(num_of_rows)
-        data_point.iloc[1] = data_point.iloc[1][perm]
-        data_point.iloc[2] = data_point.iloc[2][perm]
-    return data_point
+    try:
+        if len(data_point) >= 3 and data_point.index[2] in ['label', 'labels']:
+            num_of_rows = data_point.iloc[1].shape[0]
+            perm = RNG.permutation(num_of_rows)
+            data_point.iloc[1] = data_point.iloc[1][perm]
+            data_point.iloc[2] = data_point.iloc[2][perm]
+        elif len(data_point) == 2:
+            num_of_rows = data_point.iloc[1].shape[0]
+            perm = RNG.permutation(num_of_rows)
+            data_point.iloc[1] = data_point.iloc[1][perm]
+        return data_point
+    except Exception as e:
+        print("Error in permute with data_point:")
+        print(f'{data_point.iloc[0]}\n{data_point.iloc[1]}\n{data_point.iloc[2]}')
+        print("Exception:", e)
+        return data_point
 
 def permute_df(df, seed = 1):
     df = df.apply(permute, seed=seed, axis = 1)

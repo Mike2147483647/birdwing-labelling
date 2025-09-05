@@ -51,9 +51,13 @@ class MarkerTimeIndptDataset(Dataset):
         extra markers are currently not supported
         '''
         self.noise = noise
+        self.pred = pred
         self.src_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in src_df['rot_xyz']])
         self.src_mask = torch.stack([torch.tensor(x, dtype=torch.bool) for x in src_df['rot_xyz_mask']])
-        self.gold_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in tgt_df['rot_xyz']])
+        if pred is False:
+            self.gold_df = torch.stack([torch.tensor(x, dtype=torch.float32) for x in tgt_df['rot_xyz']])
+        else:
+            self.gold_df = None
         tgt_df_copy = tgt_df
         tgt_df_copy.loc[:, 'rot_xyz'] = tgt_df_copy['rot_xyz'].apply(simmissing_marker)
         tgt_df_copy = permute_df(tgt_df_copy)
@@ -71,13 +75,15 @@ class MarkerTimeIndptDataset(Dataset):
             self.tgt_mask = torch.stack([torch.tensor(x, dtype=torch.bool) for x in tgt_df['rot_xyz_mask']])
 
 
+
     def __len__(self):
         return len(self.tgt_df)
 
     def __getitem__(self, idx):
-        return self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx], self.gold_df[idx]
-
-
+        if self.pred is False:
+            return self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx], self.gold_df[idx]
+        else:
+            return self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx]
 
 
 

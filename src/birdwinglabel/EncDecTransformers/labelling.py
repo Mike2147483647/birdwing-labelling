@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 import torch
 from pathlib import Path
+
+from scipy.optimize import linear_sum_assignment
 from scipy.stats import norm
+from scipy.stats import multivariate_normal
 import random
 
 from birdwinglabel.EncDecTransformers.factories import IdentifyMarkerTimeIndptTransformer
@@ -11,6 +14,7 @@ from birdwinglabel.common import prepforML
 from birdwinglabel.EncoderOnlyTransformers.basic import IndptLabellingTransformer
 from birdwinglabel.EncoderOnlyTransformers.labelling import enc_labelling
 from birdwinglabel.visualisation.plot3d import plot_sequence
+
 
 
 # prep for model 2
@@ -82,7 +86,7 @@ def autoenc_predict(src, tgt, model: IdentifyMarkerTimeIndptTransformer, model_p
 
     with torch.no_grad():
         for batch in dataloader:
-            src_tensor, tgt_tensor, src_pad_mask, tgt_pad_mask, _ = batch
+            src_tensor, tgt_tensor, src_pad_mask, tgt_pad_mask = batch
             src_tensor = src_tensor.to(device)
             tgt_tensor = tgt_tensor.to(device)
             src_pad_mask = src_pad_mask.to(device)
@@ -129,17 +133,18 @@ def test_acc(pred_df, gold_df):
     # output dataframe with col0: 'abs_error' [num_row, 8], 'rel_error' [num_row, 8]
     return pd.DataFrame({'abs_error': abs_errors, 'rel_error': rel_errors})
 
-def autoenc_label(raw_df, pred_df, sample_variance_path, tol: float = 0.05):
+def autoenc_label_per_entry(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = False):
     '''
     :param raw_df: col0 'frameID', col1 'rot_xyz' dim: [num_marker,3]
     :param pred_df: col0 'frameID', col1 'rot_xyz' dim: [8,3]
-    :param sample_variance_path: path to sample variance dim: [8,3]
+    :param sample_cov_path: path to sample covariance dim: [24,24]
     :param tol: lower bound of probability to label as marker
+    :param hungarian: if True, use Hungarian algorithm for assignment
     :return: col0 'frameID', col1 'rot_xyz' dim: [num_marker,3], col2 'label' dim: [num_marker]
     '''
-
-    # Load sample variance [8,3]
-    sample_variance = np.load(sample_variance_path)  # shape: [8, 3]
+    sample_cov = np.load(sample_cov_path)  # shape: [24, 24]
+    sample_variance = np.array(
+        [sample_cov[i * 3:(i + 1) * 3, i * 3:(i + 1) * 3].diagonal() for i in range(8)])  # [8, 3]
     std = np.sqrt(sample_variance)  # [8, 3]
 
     raw_df = raw_df.reset_index(drop=True)
@@ -152,75 +157,95 @@ def autoenc_label(raw_df, pred_df, sample_variance_path, tol: float = 0.05):
         num_marker = raw_rot_xyz.shape[0]
         num_classes = pred_rot_xyz.shape[0]
 
-        # Compute |pred - raw| for all combinations
         diff = np.abs(raw_rot_xyz[:, None, :] - pred_rot_xyz[None, :, :])  # [num_marker, 8, 3]
-
-        # Compute two-sided tail probability for each axis using per-class std
-
-        # Broadcast std: [1, 8, 3]
         prob = 2 * (1 - norm.cdf(diff, loc=0, scale=std[None, :, :]))  # [num_marker, 8, 3]
+        min_prob = np.median(prob, axis=2)  # [num_marker, 8]
 
-        # Take min over axis=2 (axes), so [num_marker, 8]
-        min_prob = np.median(prob, axis=2)
-        if idx == 1:
-
-            print(f'min_prob: {min_prob}')
-
-        # Greedy assignment without replacement
         labels = np.zeros(num_marker, dtype=int)
-        assigned_classes = set()
-        for _ in range(min(num_marker, num_classes)):
-            mask = np.ones_like(min_prob, dtype=bool)
-            for c in assigned_classes:
-                mask[:, c] = False
-            masked_probs = np.where(mask, min_prob, -1)
-            i, j = np.unravel_index(np.argmax(masked_probs), masked_probs.shape)
-            if min_prob[i, j] < tol:
-                break
-            labels[i] = j + 1
-            assigned_classes.add(j)
-            min_prob[i, :] = -1
+        if hungarian:
+            # Use Hungarian algorithm for optimal assignment
+            cost_matrix = -min_prob
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+            for i, j in zip(row_ind, col_ind):
+                if min_prob[i, j] >= tol:
+                    labels[i] = j + 1  # 1-based label
+        else:
+            # Greedy assignment without replacement
+            assigned_classes = set()
+            for _ in range(min(num_marker, num_classes)):
+                mask = np.ones_like(min_prob, dtype=bool)
+                for c in assigned_classes:
+                    mask[:, c] = False
+                masked_probs = np.where(mask, min_prob, -1)
+                i, j = np.unravel_index(np.argmax(masked_probs), masked_probs.shape)
+                if min_prob[i, j] < tol:
+                    break
+                labels[i] = j + 1
+                assigned_classes.add(j)
+                min_prob[i, :] = -1
 
         out_rows.append({'frameID': frameID, 'rot_xyz': raw_rot_xyz, 'labels': labels})
 
     return pd.DataFrame(out_rows)
 
 
-def autoenc_label_hungarian(raw_df, pred_df, sample_variance_path, tol: float = 0.05):
-    # Hungarian algorithm, finds the optimal assignment that maximizes the total score (probability)
-    from scipy.stats import norm
-    from scipy.optimize import linear_sum_assignment
-
-    sample_variance = np.load(sample_variance_path)
-    std = np.sqrt(sample_variance)
+def autoenc_label_per_marker(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = False):
+    '''
+    :param raw_df: DataFrame with 'frameID', 'rot_xyz' [num_marker,3]
+    :param pred_df: DataFrame with 'frameID', 'rot_xyz' [8,3]
+    :param sample_cov_path: path to sample covariance [24,24]
+    :param tol: lower bound of probability to label as marker
+    :param hungarian: if True, use Hungarian algorithm for assignment
+    :return: DataFrame with 'frameID', 'rot_xyz', 'labels'
+    '''
+    sample_cov = np.load(sample_cov_path)  # [24, 24]
+    cov_blocks = [sample_cov[i*3:(i+1)*3, i*3:(i+1)*3] for i in range(8)]  # list of 8 [3,3] arrays
 
     raw_df = raw_df.reset_index(drop=True)
     out_rows = []
     for idx, row in raw_df.iterrows():
         frameID = row['frameID']
-        raw_rot_xyz = row['rot_xyz']
-        pred_rot_xyz = pred_df.iloc[idx]['rot_xyz']
+        raw_rot_xyz = row['rot_xyz']  # [num_marker, 3]
+        pred_rot_xyz = pred_df.iloc[idx]['rot_xyz']  # [8, 3]
 
         num_marker = raw_rot_xyz.shape[0]
         num_classes = pred_rot_xyz.shape[0]
 
-        diff = np.abs(raw_rot_xyz[:, None, :] - pred_rot_xyz[None, :, :])
-        prob = 2 * (1 - norm.cdf(diff, loc=0, scale=std[None, :, :]))
-        min_prob = np.median(prob, axis=2)
-
-        # Use negative probabilities as cost (since Hungarian minimizes)
-        cost_matrix = -min_prob
-        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        # Compute probability matrix [num_marker, 8]
+        prob_matrix = np.zeros((num_marker, num_classes))
+        for i in range(num_marker):
+            for j in range(num_classes):
+                mean = pred_rot_xyz[j]  # [3]
+                cov = cov_blocks[j]     # [3,3]
+                prob_matrix[i, j] = multivariate_normal.pdf(raw_rot_xyz[i], mean=mean, cov=cov)
 
         labels = np.zeros(num_marker, dtype=int)
-        for i, j in zip(row_ind, col_ind):
-            if min_prob[i, j] >= tol:
-                labels[i] = j + 1  # 1-based label
-            # else: leave as 0
+        if hungarian:
+            # Use Hungarian algorithm for optimal assignment
+            cost_matrix = -prob_matrix
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+            for i, j in zip(row_ind, col_ind):
+                if prob_matrix[i, j] >= tol:
+                    labels[i] = j + 1
+        else:
+            # Greedy assignment without replacement
+            assigned_classes = set()
+            for _ in range(min(num_marker, num_classes)):
+                mask = np.ones_like(prob_matrix, dtype=bool)
+                for c in assigned_classes:
+                    mask[:, c] = False
+                masked_probs = np.where(mask, prob_matrix, -1)
+                i, j = np.unravel_index(np.argmax(masked_probs), masked_probs.shape)
+                if prob_matrix[i, j] < tol:
+                    break
+                labels[i] = j + 1
+                assigned_classes.add(j)
+                prob_matrix[i, :] = -1
 
         out_rows.append({'frameID': frameID, 'rot_xyz': raw_rot_xyz, 'labels': labels})
 
     return pd.DataFrame(out_rows)
+
 
 
 
@@ -229,69 +254,79 @@ if __name__ == '__main__':
     data_dir = Path(__file__).parent.parent / 'dataprocessing'
     src_df = pd.read_pickle(data_dir / "src_df.pkl")
     tgt_df = pd.read_pickle(data_dir / "tgt_df.pkl")
+    unlabelled_df = pd.read_pickle(data_dir / "unlabelled_df.pkl")
 
     seqID_list = get_list_of_seqID(src_df)
-    random.seed(1)
-    sample_idx = random.sample(seqID_list, 250)
-    unsampled_seqIDs = list(set(seqID_list) - set(sample_idx))
-    test_df = subset_by_seqID(src_df, [unsampled_seqIDs[0]])
-    test_answer_df = subset_by_seqID(tgt_df, [unsampled_seqIDs[0]])
+    # random.seed(1)
+    # sample_idx = random.sample(seqID_list, 250)
+    # unsampled_seqIDs = list(set(seqID_list) - set(sample_idx))
+    # sample_seqID_list = [unsampled_seqIDs[200]]
+    # print(f'now labelling seqIDs: \n{sample_seqID_list}')
+    # test_df = subset_by_seqID(src_df, sample_seqID_list)
+    # test_answer_df = subset_by_seqID(tgt_df, sample_seqID_list)
+
+    raw_seqID_list = get_list_of_seqID(unlabelled_df)
+    unlabelled_seqIDs = list(set(raw_seqID_list) - set(seqID_list))
+    test_df = subset_by_seqID(unlabelled_df, [unlabelled_seqIDs[1]])
+    # drop seqID for permute
+    test_df = test_df[['frameID', 'rot_xyz']]
 
     model1 = IndptLabellingTransformer(embed_dim=32, num_heads=8, mlp_dim=128, num_layers=3, seq_len=32, num_class=9)
     model1_path = Path(__file__).parent.parent / 'EncoderOnlyTransformers' / 'ET_32m_more_data_weights.pth'
     model1_label_df = enc_labelling(test_df, model1, model1_path)
 
     np.set_printoptions(suppress=True, precision=4)
-    print(f'''
-        model_1_df ID: {model1_label_df.iloc[0, 0]}
-        model_1_df rot_xyz: {model1_label_df.iloc[0, 1]}
-        model_1_df label: {model1_label_df.iloc[0, 2]}
-        model_1_df colnames: {model1_label_df.columns}
-    ''')
+    # print(f'''
+    #     model_1_df ID: {model1_label_df.iloc[0, 0]}
+    #     model_1_df rot_xyz: {model1_label_df.iloc[0, 1]}
+    #     model_1_df label: {model1_label_df.iloc[0, 2]}
+    #     model_1_df colnames: {model1_label_df.columns}
+    # ''')
 
     model1_label_df_filtered = model1_label_df.apply(remove_non_marker, axis=1)
-    print(f'''
-        model1_label_df_filtered rot_xyz: {model1_label_df_filtered.iloc[0, 1]}
-        model1_label_df_filtered labels: {model1_label_df_filtered.iloc[0, 2]}
-        model1_label_df_filtered colnames: {model1_label_df.columns}
-    ''')
+    # print(f'''
+    #     model1_label_df_filtered rot_xyz: {model1_label_df_filtered.iloc[0, 1]}
+    #     model1_label_df_filtered labels: {model1_label_df_filtered.iloc[0, 2]}
+    #     model1_label_df_filtered colnames: {model1_label_df.columns}
+    # ''')
 
-    model2 = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128)
-    model2_param_path = Path(__file__).parent / 'model2_weights.pth'
+    model2 = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128, fc_in_embed=True, pos_enc=False)
+    model2_param_path = Path(__file__).parent / 'model2_fc_embed_20epoch_weights.pth'
     model2_pred_df = autoenc_predict(test_df, model1_label_df_filtered, model2, model2_param_path)
-    print(f'''
-            test_df frameID: {test_df.iloc[0, 0]}
-            test_df rot_xyz: {test_df.iloc[0, 1]}
-            test_df labels: {test_df.iloc[0, 2]}
-            test_df colnames: {test_df.columns}
-    ''')
-    print(f'''
-    test_answer_df rot_xyz: {test_answer_df.iloc[0, 0]}
-    test_answer_df rot_xyz: {test_answer_df.iloc[0, 1]}
-    test_answer_df labels: {test_answer_df.iloc[0, 2]}
-    test_answer_df colnames: {test_answer_df.columns}
-    ''')
-    print(f'''
-        model2_pred_df frameID: {model2_pred_df.iloc[0,0]}
-        model2_pred_df rot_xyz: {model2_pred_df.iloc[0,1]}
-    ''')
+    # print(f'''
+    #         test_df frameID: {test_df.iloc[0, 0]}
+    #         test_df rot_xyz: {test_df.iloc[0, 1]}
+    #         test_df labels: {test_df.iloc[0, 2]}
+    #         test_df colnames: {test_df.columns}
+    # ''')
+    # print(f'''
+    # test_answer_df rot_xyz: {test_answer_df.iloc[0, 0]}
+    # test_answer_df rot_xyz: {test_answer_df.iloc[0, 1]}
+    # test_answer_df labels: {test_answer_df.iloc[0, 2]}
+    # test_answer_df colnames: {test_answer_df.columns}
+    # ''')
+    # print(f'''
+    #     model2_pred_df frameID: {model2_pred_df.iloc[0,0]}
+    #     model2_pred_df rot_xyz: {model2_pred_df.iloc[0,1]}
+    # ''')
     test_result = test_acc(model2_pred_df, test_df)
     print(f'test_result sample: \nabs: {test_result.iloc[0,0]} \nrel:{test_result.iloc[0,1]}')
-    input()
+    # input()
 
-    model2_var_path = Path(__file__).parent / 'model2_sample_variance.npy'
-    model2_label_df = autoenc_label_hungarian(test_df, model2_pred_df, model2_var_path, tol = 0.01)
-    print(f'''
-model2_label_df frameID: {model2_label_df.iloc[1,0]}
-model2_label_df rot_xyz: {model2_label_df.iloc[1,1]}
-model2_label_df labels: {model2_label_df.iloc[1,2]}
-test_df frameID: {test_df.iloc[1,0]}
-test_df rot_xyz: {test_df.iloc[1,1]}
-test_df labels: {test_df.iloc[1,2]}
-''')
+    model2_var_path = Path(__file__).parent / 'model2_fc_embed_20epoch_sample_covariance.npy'
+    model2_label_df = autoenc_label_per_marker(test_df, model2_pred_df, model2_var_path, tol = 0.0001, hungarian=True)
+#     print(f'''
+# model2_label_df frameID: {model2_label_df.iloc[1,0]}
+# model2_label_df rot_xyz: {model2_label_df.iloc[1,1]}
+# model2_label_df labels: {model2_label_df.iloc[1,2]}
+# test_df frameID: {test_df.iloc[1,0]}
+# test_df rot_xyz: {test_df.iloc[1,1]}
+# test_df labels: {test_df.iloc[1,2]}
+# ''')
 
-    plot_sequence(model1_label_df,200)
-    plot_sequence(model2_label_df,200)
+    save_dir = Path(__file__).parent.parent.parent.parent / 'plots' / 'videos'
+    # plot_sequence(model1_label_df,200, save_file_path= save_dir / 'ET.mp4')
+    plot_sequence(model2_label_df,200, save_file_path= save_dir / 'autoenc.mp4')
 
 
 

@@ -277,8 +277,9 @@ def train_loop_aut(dataloader, model, loss_fn, optimizer, current_epoch, epochs)
 
     if current_epoch == epochs and all_diffs:
         diffs_cat = torch.cat(all_diffs, dim=0)  # [total_samples, 8, 3]
-        variance = torch.var(diffs_cat, dim=0, unbiased=True)  # [8, 3]
-        np.save(f'{pathlib.Path(sys.argv[0]).stem}_sample_variance.npy', variance.numpy())
+        diffs_flat = diffs_cat.reshape(diffs_cat.shape[0], -1)  # [total_samples, 24]
+        covariance = np.cov(diffs_flat.numpy(), rowvar=False)  # [24, 24]
+        np.save(f'{pathlib.Path(sys.argv[0]).stem}_sample_covariance.npy', covariance)
 
 
 
@@ -304,9 +305,9 @@ def test_loop_aut(dataloader, model, loss_fn):
             rel_error = l2_error / gold_l2  # relative error [batch, 8]
 
             # debug
-            if batch == 1:
-                print(f'src sample: {src[0]} \nsrc_mask sample: {src_mask[0]} \ntgt sample: {tgt[0]}')
-                print(f'pred sample: {pred[0]} \ngold sample: {gold[0]} \nrelative error: {rel_error[0]}')
+            # if batch == 1:
+            #     print(f'src sample: {src[0]} \nsrc_mask sample: {src_mask[0]} \ntgt sample: {tgt[0]}')
+            #     print(f'pred sample: {pred[0]} \ngold sample: {gold[0]} \nrelative error: {rel_error[0]}')
 
             # Compute max relative error per frame (across all markers)
             frame_max_error = rel_error.max(dim=-1).values  # [batch]

@@ -77,10 +77,10 @@ test_dataloader = DataLoader(test_dataset, batch_size=10)
 # model
 
 
-model = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128)
+model = IdentifyMarkerTimeIndptTransformer(embed_dim=32, num_head=8 , num_encoder_layers=3, num_decoder_layers=3, dim_feedforward=128, fc_in_embed=True, pos_enc=False)
 loss = nn.L1Loss()
 optim = torch.optim.AdamW(model.parameters())
-trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=10)
+trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=20)
 
 
 

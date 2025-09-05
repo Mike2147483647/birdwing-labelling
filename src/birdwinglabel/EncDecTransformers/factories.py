@@ -3,6 +3,7 @@ from sympy.logic.boolalg import Boolean
 from torch import nn
 import math
 
+from torch.nn import LayerNorm
 
 # find device to train nn
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -60,6 +61,29 @@ class FrequentialPosEnc(nn.Module):
         x = x + self.pe[:x.size(0)]
         x = x.transpose(0, 1).contiguous()
         # x: [batch_size, frame_count, max_marker * 3]
+        return self.dropout(x)
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 500):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        # Create a matrix of [max_len, d_model] representing positional encodings
+        position = torch.arange(max_len).unsqueeze(1)  # Shape: [max_len, 1]
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, d_model)
+        # Apply sine to even indices in the embedding dimension
+        pe[:, 0::2] = torch.sin(position * div_term)
+        # Apply cosine to odd indices in the embedding dimension
+        pe[:, 1::2] = torch.cos(position * div_term)
+        # Register pe as a buffer so it's not a parameter but moves with the model
+        self.register_buffer('pe', pe)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: [batch_size, seq_len, embedding_dim]
+        seq_len = x.size(1)
+        # Add positional encoding to input tensor
+        x = x + self.pe[:seq_len].unsqueeze(0)
+        # Apply dropout and return
         return self.dropout(x)
 
 
@@ -162,14 +186,16 @@ class IdentifyMarkerTimeDptTransformer(nn.Module):
         return tgt_tensor
 
 
-class BirdEmbedding(nn.Module):
-    def __init__(self, num_marker:int ,in_dim=3, out_dim=32):
+class FCEmbedding(nn.Module):
+    def __init__(self, num_marker:int ,in_dim=3, out_dim=32, norm:bool = True):
         super().__init__()
         # project 3d coords to embed_dim
         self.num_marker = num_marker
         self.out_dim = out_dim
         self.proj = nn.Linear(num_marker*in_dim, num_marker*out_dim)
         self.flatten = nn.Flatten(start_dim=1)
+        self.norm = norm
+        self.ln = nn.LayerNorm(self.out_dim)
 
     def forward(self, x):
         # x: [batch_size, seq_len, 3]
@@ -177,6 +203,25 @@ class BirdEmbedding(nn.Module):
         x = self.flatten(x)     # x: [batch_size, seq_len * 3]
         x = self.proj(x)  # [batch_size, seq_len * embed_dim]
         x = x.view(batch_size, self.num_marker, self.out_dim)
+        if self.norm:
+            x = self.ln(x)
+        return x
+
+class LinEmbedding(nn.Module):
+    def __init__(self, num_marker:int ,in_dim=3, out_dim=32, norm:bool = True):
+        super().__init__()
+        # project 3d coords to embed_dim
+        self.out_dim = out_dim
+        self.proj = nn.Linear(in_dim, out_dim)
+        self.norm = norm
+        self.ln = nn.LayerNorm(self.out_dim)
+
+    def forward(self, x):
+        # x: [batch_size, seq_len, 3]
+        batch_size = x.size(0)
+        x = self.proj(x)  # [batch_size, seq_len, embed_dim]
+        if self.norm:
+            x = self.ln(x)
         return x
 
 
@@ -190,7 +235,10 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
                  dropout: float=0.1,
                  coord_dim:int = 3,
                  tgt_marker:int = 8,
-                 src_marker:int = 32
+                 src_marker:int = 32,
+                 fc_in_embed:bool = True,
+                 pos_enc:bool = False,
+                 norm_embed:bool = False
                  ):
         super().__init__()
         self.num_head = num_head
@@ -198,9 +246,19 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
         self.tgt_marker = tgt_marker
         self.src_marker = src_marker
         self.flatten = nn.Flatten(start_dim=1)
-        self.src_in_embed_layer = BirdEmbedding(num_marker=src_marker, in_dim=coord_dim, out_dim=embed_dim)
-        self.tgt_in_embed_layer = BirdEmbedding(num_marker=tgt_marker, in_dim=coord_dim, out_dim=embed_dim)
-        self.out_embed_layer = BirdEmbedding(num_marker=tgt_marker, in_dim=embed_dim, out_dim=coord_dim)
+        self.norm_embed = norm_embed
+
+        self.src_in_embed_layer = FCEmbedding(num_marker=src_marker, in_dim=coord_dim, out_dim=embed_dim, norm = self.norm_embed)
+        self.tgt_in_embed_layer = FCEmbedding(num_marker=tgt_marker, in_dim=coord_dim, out_dim=embed_dim, norm = self.norm_embed)
+        self.fc_in_embed = fc_in_embed
+
+        self.src_posenc = PositionalEncoding(embed_dim)
+        self.tgt_posenc = PositionalEncoding(embed_dim)
+        self.pos_enc = pos_enc
+
+        self.src_in_embed_layer_alt = LinEmbedding(coord_dim, embed_dim, norm = self.norm_embed)
+        self.tgt_in_embed_layer_alt = LinEmbedding(coord_dim, embed_dim, norm = self.norm_embed)
+        self.out_embed_layer = FCEmbedding(num_marker=tgt_marker, in_dim=embed_dim, out_dim=coord_dim,norm=False)
         self.transformer = nn.Transformer(d_model=embed_dim,
                                           nhead=num_head,
                                           num_encoder_layers=num_encoder_layers,
@@ -218,9 +276,15 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
         :param tgt_mask: [batch, 8]
         :return: [batch, 8, 3]
         '''
-
-        src_embedded = self.src_in_embed_layer(src)     # [batch, max_marker, embed_dim]
-        tgt_embedded = self.tgt_in_embed_layer(tgt)     # [batch, 8, embed_dim]
+        if self.fc_in_embed:
+            src_embedded = self.src_in_embed_layer(src)     # [batch, max_marker, embed_dim]
+            tgt_embedded = self.tgt_in_embed_layer(tgt)     # [batch, 8, embed_dim]
+        else:
+            src_embedded = self.src_in_embed_layer_alt(src)
+            tgt_embedded = self.tgt_in_embed_layer_alt(tgt)
+        if self.pos_enc:
+            src_embedded = self.src_posenc(src_embedded)
+            tgt_embedded = self.tgt_posenc(tgt_embedded)
         output = self.transformer(
             src=src_embedded,
             tgt=tgt_embedded,
@@ -230,17 +294,3 @@ class IdentifyMarkerTimeIndptTransformer(nn.Module):
         # [batch, 8, embed_dim]
         output = self.out_embed_layer(output)        # [batch, 8, embed_dim]
         return output
-
-
-
-
-
-
-
-
-
-
-
-
-
-
