@@ -145,9 +145,15 @@ preferably created by [padding](#padding).
 
 `src_df`: pd.Dataframe containing the coordinates of the source, which is passed to the encoder side \
 `tgt_df`: pd.Dataframe containing the coordinates of the target, which is passed to the decoder side \
-`noise`: boolean, if true, it adds noise to the target \
+`noise`: boolean, if true, it adds noise to the target (unused)\
 `pred`: boolean, if true, prediction mode is used, otherwise, training mode is used 
 
+The methods `__init__` and `__getitem__` required by the torch dataloader class does different things under two modes.
+
+In training mode, `__getitem__` gives outputs 
+`self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx], self.gold_df[idx]`.
+where `self.src_df` and `self.src_mask` are from the columns `'rot_xyz'` and `'rot_xyz_mask'` of src_df,
+and `self.gold_df` is from column `'rot_xyz'` of tgt_df directly.
 
 
 
