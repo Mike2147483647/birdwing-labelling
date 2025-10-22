@@ -126,10 +126,10 @@ test_dataloader = DataLoader(test_dataset, batch_size=1)
 
 pos_enc = LinearPosEnc()
 # model = IdentifyMarkerTimeDptTransformer(pos_enc=pos_enc, max_marker=32, frame_count=100)
-model = IdentifyMarkerTimeDptTransformer(pos_enc=pos_enc, max_marker=32, frame_count=100, num_head=8, num_encoder_layers=4, num_decoder_layers=4, dim_feedforward=128)
+model = IdentifyMarkerTimeDptTransformer(pos_enc=pos_enc, max_marker=32, frame_count=100, num_head=8, num_encoder_layers=1, num_decoder_layers=1, dim_feedforward=128)
 loss = nn.L1Loss()
 optim = torch.optim.Adam(model.parameters())
-trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=32)
+trainandtest(loss_fn=loss, optimizer=optim, model=model, train_dataloader=train_dataloader, test_dataloader=test_dataloader, epochs=1)
 
 
 

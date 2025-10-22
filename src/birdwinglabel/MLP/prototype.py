@@ -31,10 +31,10 @@ test_pd_dataframe = (
 print(f'{train_pd_dataframe.info()}')
 
 # prepare the torch Datasets from pd dataframes
-train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe, 8)
-test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe, 8)
-# train_Dataset = createtorchdataset.MarkerDataset(train_pd_dataframe)
-# test_Dataset = createtorchdataset.MarkerDataset(test_pd_dataframe)
+# train_Dataset = createtorchdataset.HotMarkerDataset(train_pd_dataframe, 8)
+# test_Dataset = createtorchdataset.HotMarkerDataset(test_pd_dataframe, 8)
+train_Dataset = createtorchdataset.MarkerDataset(train_pd_dataframe)
+test_Dataset = createtorchdataset.MarkerDataset(test_pd_dataframe)
 
 # put Datasets into DataLoader objects
 batch_size = 50
@@ -70,7 +70,7 @@ class MLP1(nn.Module):
 mlp1 = MLP1(num_layers= 3 ,num_hidden_feat= 32*32 *4)
 
 # feed into automated train and test function
-# loss = nn.CrossEntropyLoss()
-loss = nn.BCEWithLogitsLoss()
+loss = nn.CrossEntropyLoss()
+# loss = nn.BCEWithLogitsLoss()
 optim = torch.optim.AdamW(mlp1.parameters())
 trainandtest.trainandtest(loss, optim, mlp1, train_dataloader, test_dataloader, epochs=20)

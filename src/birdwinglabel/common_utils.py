@@ -1,13 +1,18 @@
-import pandas as pd
 import numpy as np
-import torch
-from torch.utils.data import DataLoader
-from torch import nn
+
+
+
+
 
 
 
 # pad the matrices to have 32 rows, apply it over col of matrix
 def padding(x, final_length = 32):
+    '''
+    :param x: 1D or 2D np array of floats with dimension (seq_len, ...)
+    :param final_length: default = 32, the outmost dimension will be padded to this number
+    :return: np array with dimension (final_length, ...), padding mask with dimension (final_length), where 1 indicates the row is padded
+    '''
     if x.ndim == 1:
         padded = np.zeros(final_length, dtype=x.dtype)
         mask = np.ones(final_length, dtype=np.int32)
@@ -24,6 +29,7 @@ def padding(x, final_length = 32):
         return padded, mask
     else:
         raise ValueError("Input must be 1D or 2D numpy array")
+
 
 # Unpad rows, use with .apply
 def unpad_row(row, pad_value=0):
@@ -53,6 +59,7 @@ def simulate_missing(df, portion: float= 0.1, seed = 1):
     df.loc[rows_to_set_zero] = df.loc[rows_to_set_zero].apply(lambda row: simmissing_row(row, seed=seed), axis=1)
     return df
 
+
 # simulate missing marker for *a* rot_xyz matrix only
 def simmissing_marker(coord_matrix, seed = 1):
     RNG = np.random.default_rng(seed=seed)
@@ -64,6 +71,7 @@ def simmissing_marker(coord_matrix, seed = 1):
         return coord_matrix
     except Exception as e:
         return np.zeros((1, 3))
+
 
 # randomize the rows of coords matrix and labels of each data point
 def permute(data_point, seed = 1):

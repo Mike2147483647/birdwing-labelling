@@ -65,6 +65,8 @@ def test_loop(dataloader, model, loss_fn):
                 pred_labels = pred.argmax(-1)
                 correct += (pred_labels == y).sum().item()
                 total_labels += y.numel()
+                print(f"sample y: {y[0]}")
+                print(f"sample pred: {pred[0]}")
 
             elif isinstance(loss_fn, torch.nn.BCEWithLogitsLoss):
                 # y: [batch, num_marker, num_labels], pred: [batch, num_marker, num_labels]
