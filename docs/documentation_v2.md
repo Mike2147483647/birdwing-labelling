@@ -8,9 +8,17 @@
     * [simmissing_marker](#simmissing_marker)
     * [permute](#permute)
     * [permute_df](#permute_df)
+    * [trainandtest](#trainandtest)
+    * [train_loop](#train_loop)
+    * [test_loop](#test_loop-)
+    * [train_loop_aut](#train_loop_aut)
+    * [test_loop_aut](#test_loop_aut)
   * [dataclasses](#dataclasses)
     * [EncMarkerDataset](#encmarkerdataset)
     * [AutoMarkerDataset](#automarkerdataset)
+  * [model](#model)
+    * [EncTransformer](#enctransformer)
+    * [AutTransformer](#auttransformer)
 <!-- TOC -->
 
 
@@ -106,6 +114,77 @@ Wrapper of `permute` for using on a dataframe directly.
 `seed`: the seed for RNG, default = 1
 
 
+### trainandtest
+`trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, 
+epochs = 10, log_file=f'{pathlib.Path(sys.argv[0]).stem}_train_log.txt'):`
+
+The go-to function using this package. Automatically trains and tests the model over every epoch.
+The log file is named "{name-of-the-running-script}_train_log.txt" by default, 
+and is saved completely only after the message "Done!".
+The model parameters are saved as "{name-of-the-running-script}_{model-class-name}.pth", 
+and is saved only after the message "Done!".
+
+`loss_fn`: instance of loss function to be used during training and testing.\
+`optimizer`: instance of optimizer classes from torch, `torch.optim.AdamW` is recommended. \
+`train_dataloader`: the torch dataloader object created from `EncMarkerDataset` using the training set. \
+`test_dataloader`: the torch dataloader object created from `EncMarkerDataset` using the test set. \
+`epochs`: number of epochs of training. \
+`log_file`: name of the log file. \
+
+
+### train_loop
+`train_loop(dataloader, model, loss_fn, optimizer)`
+
+The function used to train `EncTransformer`. 
+It prints the (average) training loss, the number of training data gone through thus far,
+and the total amount of training data as a pseudo progress bar.
+
+`dataloader`: the torch dataloader object created from `EncMarkerDataset`. \
+`model`: instance of `EncTransformer`. \
+`loss_fn`: loss function to be used during training, instance of `torch.nn.BCEWithLogitsLoss` is recommended. \
+`optimizer`: instance of optimizer classes from torch, `torch.optim.AdamW` is recommended. \
+
+
+### test_loop 
+`test_loop(dataloader, model, loss_fn)`
+
+The function used to evaluate the performance of `EncTransformer`.
+It prints the test loss (average over all entries), accuracy per entry, test loss average over batch, \
+accuracy per marker: number of true positive (true positive rate), \
+accuracy per frame and the fraction in integers.
+
+`dataloader`: the torch dataloader object created from `EncMarkerDataset`. \
+`model`: instance of `EncTransformer`. \
+`loss_fn`: instance of loss function to be used during testing, only supports `torch.nn.BCEWithLogitsLoss`.\
+
+
+### train_loop_aut
+`train_loop_aut(dataloader, model, loss_fn, optimizer, current_epoch, epochs)`
+
+The function used to train `AutTransformer`.
+Saves the covariance of marker coordinates in a tgt_marker $\times$ 3 square matrix, 
+which can be used later as a reference matching with the observed markers with predicted markers.
+
+`dataloader`: the torch dataloader object created from `AutoMarkerDataset`. \
+`model`: instance of `AutTransformer`. \ 
+`loss_fn`: instance of loss function to be used during training. \
+`optimizer`: instance of optimizer classes from torch, `torch.optim.AdamW` is recommended. \
+`current_epoch`: used internally in `trainandtest`. \
+`epochs`: used internally in `trainandtest`, number of epochs to be trained. \
+
+
+### test_loop_aut
+`test_loop_aut(dataloader, model, loss_fn)`
+
+The function used to evaluate the performance of `AutTransformer`.
+It prints the test loss (average over all frames), with actual values of the loss and total number of frames, 
+and the framewise within 5\%, 10\%, 20\% error accuracy, all with actual fraction.
+
+`dataloader`: the torch dataloader object created from `AutoMarkerDataset`. \
+`model`: instance of `AutTransformer`. \ 
+`loss_fn`: instance of loss function to be used during testing. \
+
+
 
 ## dataclasses
 
@@ -142,6 +221,7 @@ a list of class labels in one-hot encoded fashion
 The dataset used for the encoder-decoder transformer model. 
 For both `src_df` and `tgt_df`, they must contain columns with names `'rot_xyz'` and `'rot_xyz_mask'`, 
 preferably created by [padding](#padding).
+Note that the label is implicitly indicated in the target by the order of the markers.
 
 `src_df`: pd.Dataframe containing the coordinates of the source, which is passed to the encoder side \
 `tgt_df`: pd.Dataframe containing the coordinates of the target, which is passed to the decoder side \
@@ -181,15 +261,77 @@ for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(foo2):
 
 
 
-## model classes
+## model
 
 This section includes the machine learning models. 
 After initialisation, data can be fed into the models for training or predictions.
 Caution: the model parameters have to be loaded afterwards.
 
-### 
+### EncTransformer
+`EncTransformer(embed_dim: int, num_heads: int, mlp_dim: int, num_layers: int, seq_len: int = 8, dropout: float=0.1, num_class:int = 8)`
+
+The model used for identifying the markers directly. 
+It cannot be extended to identify extra markers but have higher accuracy.
+
+`embed_dim` (int): the size of the embedding dimension. It embeds the 3D coordinates to a higher dimensional space. \
+`num_heads` (int): the number of heads in the multihead attention block used in the transformer architecture. \
+`mlp_dim` (int): the dimension of the fully connected layer inside the transformer architecture. \
+Usually a multiple of number of heads. \
+`num_layers` (int): the number of layers of the encoder. \
+`seq_len` (int): the number of markers (observed). \
+`dropout` (float): the probability of dropping out the output of neurons as a measure of regularization. \
+`num_class` (int): the number of classes to be identified. \
+
+`EncTransformer.forward(inputs: torch.Tensor)` or `EncTransformer(inputs: torch.Tensor)`
+
+Passes the inputs through the model. 
+The output is a tensor with dimension (batch_size, seq_len, num_class).
+
+`inputs` (torch.Tensor): a tensor with dimension (batch_size, seq_len, 3), 
+i.e. a list of the marker 3D coordinates matrices.
 
 
+### AutTransformer
+`AutTransformer(embed_dim:int,
+num_head: int = 1,
+num_encoder_layers: int = 1,
+num_decoder_layers: int = 1,
+dim_feedforward: int = 4,
+dropout: float=0.1,
+coord_dim:int = 3,
+tgt_marker:int = 8,
+src_marker:int = 32,
+fc_in_embed:bool = True,
+norm_embed:bool = False
+):`
+
+The model used for predicting the 3D coordinates of all the markers by combining 
+the results of `EncTransformer` (target) and the observed coordinates (source).
+The predicted coordinates are matched to the observed coordinates for labelling afterwards.
+Note that the label is implicitly indicated in the target by the order of the markers.
+
+`num_head` (int): the number of heads in the multihead attention block used in the transformer architecture. \
+`num_encoder_layers` (int): number of encoder layers in the transformer architecture. \
+`num_decoder_layers` (int): number of decoder layers in the transformer architecture. \
+`dim_feedforward` (int): the dimension of the fully connected layer inside the transformer architecture. 
+`dropout` (float): the probability of dropping out the output of neurons as a measure of regularization. \
+`coord_dim` (int): the dimension of the markers, usually 3. \
+`tgt_marker` (int): number of markers in the target. \
+`src_marker` (int): number of markers in the source. \
+`fc_in_embed` (bool): usage of using fully connected layer as the embedding before feeding to the transformer, 
+else use linear layer. Default: `True`. \
+`norm_embed` (bool): normalize the outputs of the embedding layer before feeding to the transformer. Default: `False`. \
+
+`AutTransformer.forward(src: torch.Tensor, tgt: torch.Tensor, src_mask: torch.Tensor, tgt_mask: torch.Tensor = None)`
+
+Passes the source and target to obtain predictions.
+
+`src` (torch.Tensor): the source tensor with dimension (batch_size, src_marker, 3),
+the tensor of the observed coordinates. \
+`tgt` (torch.Tensor): the target tensor with dimension (batch_size, tgt_marker, 3),
+the tensor of the coordinates labelled as valid marker by `EncTransformer`. \
+`src_mask` (torch.Tensor): 1 indicates the marker is padded, 0-1 matrix with dimension (batch_size, src_marker) .\
+`tgt_mask` (torch.Tensor): 1 indicates the marker is padded, 0-1 matrix with dimension (batch_size, tgt_marker).\
 
 
 
