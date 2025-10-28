@@ -78,10 +78,18 @@ class IndptLabellingTransformer(nn.Module):
         self.num_class = num_class
         self.seq_len = seq_len
         self.embed = BirdEmbedding(3, embed_dim=embed_dim)
-        self.layers = nn.ModuleList([
-            TransformerBlock(embed_dim, num_heads, mlp_dim, dropout)
-            for _ in range(num_layers)
-        ])
+        # custom layer
+        # self.layers = nn.ModuleList([
+        #     TransformerBlock(embed_dim, num_heads, mlp_dim, dropout)
+        #     for _ in range(num_layers)
+        # ])
+        self.encLayer = nn.TransformerEncoderLayer(
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=mlp_dim,
+            dropout=dropout,
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer=self.encLayer, num_layers=num_layers)
         self.ln = nn.LayerNorm(embed_dim)
         self.flatten = nn.Flatten(start_dim=1)  # flatten on 2nd,3rd dim
         self.out = nn.Linear(seq_len * embed_dim, seq_len * num_class)
@@ -96,11 +104,14 @@ class IndptLabellingTransformer(nn.Module):
         # Transpose for MultiheadAttention: [seq_len, batch_size, embed_dim]
         x = x.transpose(0, 1).contiguous()
 
+        # custom layer version
         # notes: no need for attn_mask in our settings since we model the bird shape as undirect graph
-        for layer in self.layers:
-            x = layer(x)
+        # for layer in self.layers:
+        #     x = layer(x)
+        #
+        # x = self.ln(x)
+        x = self.encoder(x)
 
-        x = self.ln(x)
         # print(f'normalized x shape: {x.shape}')
         x = x.transpose(0, 1)  # embedding transpose to [batch_size, seq_len, embed_dim]
         x = self.flatten(x)

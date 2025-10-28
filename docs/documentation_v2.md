@@ -154,6 +154,41 @@ In training mode, `__getitem__` gives outputs
 `self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx], self.gold_df[idx]`.
 where `self.src_df` and `self.src_mask` are from the columns `'rot_xyz'` and `'rot_xyz_mask'` of src_df,
 and `self.gold_df` is from column `'rot_xyz'` of tgt_df directly.
+`self.tgt_df` and `self.tgt_mask` are created by passing a copy of tgt_df to
+`simmissing_marker`, `permute_df` and `padding(.,final_length = 8)`.
+
+In prediction mode, `__getitem__` gives outputs 
+`self.src_df[idx], self.tgt_df[idx], self.src_mask[idx], self.tgt_mask[idx]`,
+where `self.src_df` and `self.src_mask` are from the columns `'rot_xyz'` and `'rot_xyz_mask'` of src_df,
+and `self.tgt_df` and `self.tgt_mask` are obtained by applying `padding(.,final_length = 8)` on tgt_df.
+
+So, for now, when training, only feed data with all 8 markers present in tgt_df; 
+when predicting, keep tgt_df unpadded and the class will pad it automatically.
+
+(Potentially will make use of the tgt_pad_mask to train with less markers present,
+may need another padding function to fill in missing markers, since currently the padding function will only append, not insert.)
+
+The class is supposed to be passed in a torch dataloader, for example:
+```python
+from torch.utils.data import DataLoader
+foo1 = AutoMarkerDataset(src_df, tgt_df, noise = False, pred = False)
+foo2 = DataLoader(foo1, batch_size)
+```
+then you can extract by e.g.
+```python
+for batch, (src, tgt, src_mask, tgt_mask, gold) in enumerate(foo2):
+```
+
+
+
+## model classes
+
+This section includes the machine learning models. 
+After initialisation, data can be fed into the models for training or predictions.
+Caution: the model parameters have to be loaded afterwards.
+
+### 
+
 
 
 
