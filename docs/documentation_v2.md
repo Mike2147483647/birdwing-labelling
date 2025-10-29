@@ -185,6 +185,90 @@ and the framewise within 5\%, 10\%, 20\% error accuracy, all with actual fractio
 `loss_fn`: instance of loss function to be used during testing. \
 
 
+### enc_labelling
+`enc_labelling(raw_df, model:EncTransformer, model_param_path)`
+
+Automates labelling using `EncTransformer`.
+Produces a labelled dataframe with columns `frameID`, `rot_xyz`, and `labels`.
+The values of columns `frameID` and `rot_xyz` remains unchanged, and the markers labelled as non-markers are remained.
+
+`raw_df`: pd.DataFrame with col `frameID`, `rot_xyz`; `rot_xyz` entries are matrices of (num_marker, 3). \
+`model`: instance of EncTransformer. \
+`model_param_path`: path to a `.pth` file where the trained params are stored. \
+`max_length` (int): max amount of markers to accept in the unprocessed dataset, 
+pads data points with fewer markers than this value. \
+
+
+### remove_non_marker
+`remove_non_marker(data_point)`
+
+Remove the markers that are labelled non-marker and sort the rot_xyz matrix by ascending label 1-8+.
+
+`data_point`: a pd.Series with columns `frameID`, `rot_xyz`, `labels`. \
+
+
+### autoenc_predict
+`autoenc_predict(src, tgt, model: AutTransformer, model_param_path)`
+
+Automates prediction of marker coordinates using `AutTransformer`.
+Produces a dataframe with columns `frameID`, and `rot_xyz`. 
+The entries in `rot_xyz` are $8 \times 3$ matrices of markers coordinates sorted by label ascendingly.
+
+`src_df`: pd.DataFrame with columns `frameID`, `rot_xyz`; `rot_xyz` entries are matrices of (num_marker, 3). \
+`tgt_df`: pd.DataFrame with columns `frameID`, `rot_xyz`; 
+`rot_xyz` entries are matrices of (num_marker, 3), num_marker <= 8. \
+`model`: instance of AutTransformer. \
+`model_param_path`: path to .pth where the trained params are stored. \
+
+
+### test_acc
+`test_acc(pred_df, gold_df)`
+
+Debug function. Tests the accuracies of the prediction given the answers (gold_df).
+Produces a dataframe with columns `euclid_error`, `rel_error` with vectors of length 8 (number of markers now).
+
+`pred_df`: pd.DataFrame of predictions, must contain column named `rot_xyz`. \
+`gold_df`: pd.DataFrame of known real values, must contain column named `rot_xyz`. \
+
+
+### autoenc_label_per_entry
+`autoenc_label_per_entry(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = True)`
+
+Matches the predicted markers with the actual observed markers per entry of the coordinate matrix.
+It assumes that the xyz-coordinates of the markers follows a normal distribution independently and 
+calculates a 'p-value' of the coordinate for each label.
+The algorithm will match label with the observed marker with the highest 'p-value' for that label.
+If all observed markers has a 'p-value' lower than the tolerance `tol` for a label, 
+no marker is labelled as this label. \
+Produces a dataframe with columns `frameID`, `rot_xyz`, and `labels`.
+
+`raw_df`: pd.DataFrame with columns `frameID`, `rot_xyz` that contains the actual coordinates of the markers. \
+`pred_df`: pd.DataFrame with columns `frameID`, `rot_xyz` that contains the predicted coordinates of the markers. \
+`sample_cov_path`: path to the estimated covariance matrix calculated in the last epoch. \
+`tol`: tolerance of labelling as valid marker, range: (0,1). \
+`hungarian`: if `True`, uses modified Jonker–Volgenant algorithm from scipy, else uses the custom greedy algorithm
+(which is slow and less accurate, but has higher customizability). \
+
+
+### autoenc_label_per_marker
+`autoenc_label_per_marker(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = True)`
+
+Matches the predicted markers with the actual observed markers per entry of the coordinate matrix.
+It assumes that the markers follow normal distributions independently and 
+calculates the densities of the markers for each label.
+The algorithm will match label with the observed marker with the highest density for that label.
+If all observed markers have densities lower than the tolerance `tol` for a label, 
+no marker is labelled as this label. \
+Produces a dataframe with columns `frameID`, `rot_xyz`, and `labels`.
+
+`raw_df`: pd.DataFrame with columns `frameID`, `rot_xyz` that contains the actual coordinates of the markers. \
+`pred_df`: pd.DataFrame with columns `frameID`, `rot_xyz` that contains the predicted coordinates of the markers. \
+`sample_cov_path`: path to the estimated covariance matrix calculated in the last epoch. \
+`tol`: tolerance of labelling as valid marker, range: (0,1). \
+`hungarian`: if `True`, uses modified Jonker–Volgenant algorithm from scipy, else uses the custom greedy algorithm
+(which is slow and less accurate, but has higher customizability). \
+
+
 
 ## dataclasses
 

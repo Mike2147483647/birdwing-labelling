@@ -1,11 +1,20 @@
 import numpy as np
-import torch
-import torch.nn.functional as F
+import pandas as pd
+
 import pathlib
 import sys
 import contextlib
 
+from scipy.optimize import linear_sum_assignment
+from scipy.stats import norm
+from scipy.stats import multivariate_normal
+
+import torch
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+
 from birdwinglabel.model import EncTransformer, AutTransformer
+from birdwinglabel.dataclasses import EncMarkerDataset, AutoMarkerDataset
 
 
 
@@ -305,3 +314,292 @@ def test_loop_aut(dataloader, model, loss_fn):
     Proportion of frames that has <10% error: {within_10 / num_frame:.6f}
     Proportion of frames that has <20% error: {within_20 / num_frame:.6f}
     ''')
+
+
+###########################################################################
+# labelling
+###########################################################################
+
+
+def enc_labelling(raw_df, model:EncTransformer, model_param_path):
+    '''
+    raw_df: pd.DataFrame with col 'frameID', 'rot_xyz'
+        'rot_xyz' entries are matrices of [num_marker, 3]
+    model: EncTransformer
+    model_param_path: path to .pth where the trained params are stored
+    max_length: int, pad length
+    '''
+    max_length = model.seq_len
+
+    # Permute 'rot_xyz' column
+    df = raw_df.copy()
+    df = permute_df(df)
+
+    # Pad 'rot_xyz' to max_length
+    df['rot_xyz'] = df['rot_xyz'].apply(lambda x: padding(x, max_length)[0])
+
+    # Convert to tensor
+    rot_xyz_tensor = torch.tensor(np.stack(df['rot_xyz'].values), dtype=torch.float32)
+
+    # Load model parameters
+    model.load_state_dict(torch.load(model_param_path, map_location='cuda'))
+    model.eval()
+
+    # Forward pass
+    with torch.no_grad():
+        pred_label_tensor = model(rot_xyz_tensor)
+    pred_label_matrix = pred_label_tensor.argmax(dim=2)     # convert to numerical labelling
+
+    # Build labelled DataFrame
+    labelled_df = pd.DataFrame({
+        'frameID': df['frameID'],
+        'rot_xyz': [arr.numpy() for arr in rot_xyz_tensor],
+        'labels': [arr.numpy() for arr in pred_label_matrix]
+    })
+
+    # Unpad rows using unpad_row
+    labelled_df[['rot_xyz', 'labels']] = labelled_df.apply(
+        unpad_row, axis=1, result_type='expand'
+    )
+
+    return labelled_df
+
+
+def remove_non_marker(data_point):
+    '''
+    data_point: pd.Series with col 'frameID', 'rot_xyz', 'labels'
+    rot_xyz: matrix [max_length, 3]
+    labels: torch.tensor vector of int 0-8 [max_length]
+    '''
+    rot_xyz = data_point['rot_xyz']
+    labels = data_point['labels']
+    frameID = data_point['frameID']
+    # Create mask for labels not equal to 0
+    mask = labels != 0
+    # Filter rot_xyz and labels
+    filtered_rot_xyz = rot_xyz[mask]
+    filtered_labels = labels[mask]
+    # Sort by label ascending
+    sort_idx = np.argsort(filtered_labels)
+    sorted_rot_xyz = filtered_rot_xyz[sort_idx]
+    sorted_labels = filtered_labels[sort_idx]
+    # Return as pd.Series
+    return pd.Series({'frameID': frameID, 'rot_xyz': sorted_rot_xyz, 'labels': sorted_labels})
+
+
+def autoenc_predict(src, tgt, model: AutTransformer, model_param_path):
+    '''
+    src_df: pd.DataFrame with col 'frameID', 'rot_xyz'
+        'rot_xyz' entries are matrices of [num_marker, 3]
+    tgt_df: pd.DataFrame with col 'frameID', 'rot_xyz'
+        'rot_xyz' entries are matrices of [num_marker, 3], num_marker <= 8
+    model: AutTransformer
+    model_param_path: path to .pth where the trained params are stored
+    '''
+    # from birdwinglabel.common.createtorchdataset import MarkerTimeIndptDataset
+    # from torch.utils.data import DataLoader
+
+    src_max_length = model.src_marker
+    tgt_max_length = model.tgt_marker
+
+    # Prepare src DataFrame
+    in_src_df = src.copy()
+    in_src_df = permute_df(in_src_df)
+    in_src_df[['rot_xyz', 'rot_xyz_mask']] = in_src_df['rot_xyz'].apply(
+        lambda x: pd.Series(padding(x, src_max_length))
+    )
+
+    # # Prepare tgt DataFrame
+    in_tgt_df = tgt.copy()
+    # in_tgt_df = prepforML.permute_df(in_tgt_df)
+    # in_tgt_df['rot_xyz'] = in_tgt_df['rot_xyz'].apply(prepforML.simmissing_marker)
+    # in_tgt_df[['rot_xyz', 'rot_xyz_pad_mask']] = in_tgt_df['rot_xyz'].apply(
+    #     lambda x: pd.Series(prepforML.padding(x, tgt_max_length))
+    # )
+
+    # Create dataset and dataloader
+    dataset = AutoMarkerDataset(in_src_df, in_tgt_df, noise=False, pred=True)
+    dataloader = DataLoader(dataset, batch_size=10)
+
+    # Load model parameters
+    device = 'cuda'
+    model.load_state_dict(torch.load(model_param_path, map_location=device))
+    model.eval()
+    model.to(device)
+
+    all_preds = []
+    frame_ids = []
+
+    with torch.no_grad():
+        for batch in dataloader:
+            src_tensor, tgt_tensor, src_pad_mask, tgt_pad_mask = batch
+            src_tensor = src_tensor.to(device)
+            tgt_tensor = tgt_tensor.to(device)
+            src_pad_mask = src_pad_mask.to(device)
+            tgt_pad_mask = tgt_pad_mask.to(device)
+
+            pred = model(src_tensor, tgt_tensor, src_pad_mask, tgt_pad_mask)
+            # pred: [batch, 8, 3]
+            all_preds.append(pred.cpu())
+            # Collect frameIDs for this batch
+            start_idx = len(frame_ids)
+            end_idx = start_idx + src_tensor.shape[0]
+            frame_ids.extend(tgt.iloc[start_idx:end_idx]['frameID'].values)
+
+    # Concatenate predictions
+    all_preds = torch.cat(all_preds, dim=0)
+    out_df = pd.DataFrame({
+        'frameID': frame_ids,
+        'rot_xyz': [arr.numpy() for arr in all_preds]
+    })
+    return out_df
+
+def test_acc(pred_df, gold_df):
+    euclid_errors = []
+    rel_errors = []
+    # for each row of pred and gold
+    for idx in range(len(pred_df)):
+        pred = pred_df.iloc[idx]['rot_xyz']  # shape: [8, 3]
+        gold = gold_df.iloc[idx]['rot_xyz']  # shape: [num_marker, 3], num_marker <= 8
+
+        # obtain rot_xyz of pred dim: [8,3] and gold dim: [num_marker,3] slice to [:8,3]
+        num_marker = min(pred.shape[0], gold.shape[0])
+        pred = pred[:num_marker]
+        gold = gold[:num_marker]
+
+        # compute L2loss for each row of the matrices [8]
+        l2_error = np.linalg.norm(pred - gold, axis=1)  # [num_marker]
+        gold_l2 = np.linalg.norm(gold, axis=1)
+        # compute relative error to gold [8]
+        rel_error = l2_error / (gold_l2 + 1e-8)
+
+        euclid_errors.append(l2_error)
+        rel_errors.append(rel_error)
+
+    # output dataframe with col0: 'euclid_error' [num_row, 8], 'rel_error' [num_row, 8]
+    return pd.DataFrame({'euclid_error': euclid_errors, 'rel_error': rel_errors})
+
+def autoenc_label_per_entry(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = True):
+    '''
+    :param raw_df: col0 'frameID', col1 'rot_xyz' dim: [num_marker,3]
+    :param pred_df: col0 'frameID', col1 'rot_xyz' dim: [8,3]
+    :param sample_cov_path: path to sample covariance dim: [24,24]
+    :param tol: lower bound of probability to label as marker
+    :param hungarian: if True, use Hungarian algorithm for assignment
+    :return: col0 'frameID', col1 'rot_xyz' dim: [num_marker,3], col2 'label' dim: [num_marker]
+    '''
+    sample_cov = np.load(sample_cov_path)  # shape: [24, 24]
+    sample_variance = np.array(
+        [sample_cov[i * 3:(i + 1) * 3, i * 3:(i + 1) * 3].diagonal() for i in range(8)])  # [8, 3]
+    std = np.sqrt(sample_variance)  # [8, 3]
+
+    raw_df = raw_df.reset_index(drop=True)
+    out_rows = []
+    for idx, row in raw_df.iterrows():
+        frameID = row['frameID']
+        raw_rot_xyz = row['rot_xyz']  # [num_marker, 3]
+        pred_rot_xyz = pred_df.iloc[idx]['rot_xyz']  # [8, 3]
+
+        num_marker = raw_rot_xyz.shape[0]
+        num_classes = pred_rot_xyz.shape[0]
+
+        diff = np.abs(raw_rot_xyz[:, None, :] - pred_rot_xyz[None, :, :])  # [num_marker, 8, 3]
+        prob = 2 * (1 - norm.cdf(diff, loc=0, scale=std[None, :, :]))  # [num_marker, 8, 3]
+        min_prob = np.median(prob, axis=2)  # [num_marker, 8]
+
+        labels = np.zeros(num_marker, dtype=int)
+        if hungarian:
+            # Use Hungarian algorithm for optimal assignment
+            cost_matrix = -min_prob
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+            for i, j in zip(row_ind, col_ind):
+                if min_prob[i, j] >= tol:
+                    labels[i] = j + 1  # 1-based label
+        else:
+            # Greedy assignment without replacement
+            assigned_classes = set()
+            for _ in range(min(num_marker, num_classes)):
+                mask = np.ones_like(min_prob, dtype=bool)
+                for c in assigned_classes:
+                    mask[:, c] = False
+                masked_probs = np.where(mask, min_prob, -1)
+                i, j = np.unravel_index(np.argmax(masked_probs), masked_probs.shape)
+                if min_prob[i, j] < tol:
+                    break
+                labels[i] = j + 1
+                assigned_classes.add(j)
+                min_prob[i, :] = -1
+
+        out_rows.append({'frameID': frameID, 'rot_xyz': raw_rot_xyz, 'labels': labels})
+
+    return pd.DataFrame(out_rows)
+
+
+def autoenc_label_per_marker(raw_df, pred_df, sample_cov_path, tol: float = 0.05, hungarian: bool = True):
+    '''
+    :param raw_df: DataFrame with 'frameID', 'rot_xyz' [num_marker,3]
+    :param pred_df: DataFrame with 'frameID', 'rot_xyz' [8,3]
+    :param sample_cov_path: path to sample covariance [24,24]
+    :param tol: lower bound of probability to label as marker
+    :param hungarian: if True, use Hungarian algorithm for assignment
+    :return: DataFrame with 'frameID', 'rot_xyz', 'labels'
+    '''
+    sample_cov = np.load(sample_cov_path)  # [24, 24]
+    cov_blocks = [sample_cov[i*3:(i+1)*3, i*3:(i+1)*3] for i in range(8)]  # list of 8 [3,3] arrays
+
+    raw_df = raw_df.reset_index(drop=True)
+    out_rows = []
+    for idx, row in raw_df.iterrows():
+        frameID = row['frameID']
+        raw_rot_xyz = row['rot_xyz']  # [num_marker, 3]
+        pred_rot_xyz = pred_df.iloc[idx]['rot_xyz']  # [8, 3]
+
+        num_marker = raw_rot_xyz.shape[0]
+        num_classes = pred_rot_xyz.shape[0]
+
+        # Compute probability matrix [num_marker, 8]
+        prob_matrix = np.zeros((num_marker, num_classes))
+        for i in range(num_marker):
+            for j in range(num_classes):
+                mean = pred_rot_xyz[j]  # [3]
+                cov = cov_blocks[j]     # [3,3]
+                prob_matrix[i, j] = multivariate_normal.pdf(raw_rot_xyz[i], mean=mean, cov=cov)
+
+        labels = np.zeros(num_marker, dtype=int)
+        if hungarian:
+            # Use Hungarian algorithm for optimal assignment
+            cost_matrix = -prob_matrix
+            row_ind, col_ind = linear_sum_assignment(cost_matrix)
+            for i, j in zip(row_ind, col_ind):
+                if prob_matrix[i, j] >= tol:
+                    labels[i] = j + 1
+        else:
+            # Greedy assignment without replacement
+            assigned_classes = set()
+            for _ in range(min(num_marker, num_classes)):
+                mask = np.ones_like(prob_matrix, dtype=bool)
+                for c in assigned_classes:
+                    mask[:, c] = False
+                masked_probs = np.where(mask, prob_matrix, -1)
+                i, j = np.unravel_index(np.argmax(masked_probs), masked_probs.shape)
+                if prob_matrix[i, j] < tol:
+                    break
+                labels[i] = j + 1
+                assigned_classes.add(j)
+                prob_matrix[i, :] = -1
+
+        out_rows.append({'frameID': frameID, 'rot_xyz': raw_rot_xyz, 'labels': labels})
+
+    return pd.DataFrame(out_rows)
+
+
+
+
+
+
+
+
+
+
+
+
