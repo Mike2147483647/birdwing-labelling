@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 
-from common_utils import permute_df, padding, simmissing_marker
+from birdwinglabel.common_utils import permute_df, padding, simmissing_marker
 
 
 # create class to turn dataset into torch DataLoader
@@ -35,7 +35,7 @@ class EncMarkerDataset(Dataset):
 
     def __getitem__(self, idx):
         markers = torch.tensor(self.data.iloc[idx]['rot_xyz'], dtype=torch.float32)
-        label = self.data.iloc[idx]['label']
+        label = self.data.iloc[idx]['labels']
         label = torch.tensor(label, dtype=torch.long).squeeze()
         # One-hot encode: shape [8, 8]
         label = F.one_hot(label, num_classes=self.num_class).float()

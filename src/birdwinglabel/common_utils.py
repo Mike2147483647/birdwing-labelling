@@ -13,8 +13,6 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from birdwinglabel.model import EncTransformer, AutTransformer
-from birdwinglabel.dataclasses import EncMarkerDataset, AutoMarkerDataset
 
 
 
@@ -205,6 +203,8 @@ def trainandtest(loss_fn, optimizer, model, train_dataloader, test_dataloader, e
     # train and test dataloader are instance of DataLoader using train and test data
     # prepare class to output console ouput in txt while keeping the usual console output
 
+    from birdwinglabel.model import AutTransformer, EncTransformer
+
 
     class Tee:
         def __init__(self, file):
@@ -321,7 +321,7 @@ def test_loop_aut(dataloader, model, loss_fn):
 ###########################################################################
 
 
-def enc_labelling(raw_df, model:EncTransformer, model_param_path):
+def enc_labelling(raw_df, model, model_param_path):
     '''
     raw_df: pd.DataFrame with col 'frameID', 'rot_xyz'
         'rot_xyz' entries are matrices of [num_marker, 3]
@@ -387,7 +387,7 @@ def remove_non_marker(data_point):
     return pd.Series({'frameID': frameID, 'rot_xyz': sorted_rot_xyz, 'labels': sorted_labels})
 
 
-def autoenc_predict(src, tgt, model: AutTransformer, model_param_path):
+def autoenc_predict(src, tgt, model, model_param_path):
     '''
     src_df: pd.DataFrame with col 'frameID', 'rot_xyz'
         'rot_xyz' entries are matrices of [num_marker, 3]
@@ -396,8 +396,8 @@ def autoenc_predict(src, tgt, model: AutTransformer, model_param_path):
     model: AutTransformer
     model_param_path: path to .pth where the trained params are stored
     '''
-    # from birdwinglabel.common.createtorchdataset import MarkerTimeIndptDataset
-    # from torch.utils.data import DataLoader
+    from birdwinglabel.dataclasses import AutoMarkerDataset
+    from torch.utils.data import DataLoader
 
     src_max_length = model.src_marker
     tgt_max_length = model.tgt_marker

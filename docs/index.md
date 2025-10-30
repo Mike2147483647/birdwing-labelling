@@ -2,3 +2,6 @@
 
 See the full documentation here:  
 [Project Documentation](documentation_v2.md)
+[Future Updates](future_updates.md)
+
+possibly a copy of readme here.
